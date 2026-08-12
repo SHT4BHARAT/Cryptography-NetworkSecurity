@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { currentDateKey } from "@/lib/utils/date";
 
 type Tx = {
   id: string;
@@ -13,7 +14,7 @@ type Tx = {
   category: string;
 };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => currentDateKey();
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Tx[] | null>(null);
@@ -23,6 +24,7 @@ export default function TransactionsPage() {
   const [description, setDescription] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -63,6 +65,23 @@ export default function TransactionsPage() {
       setFormError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const onDelete = async (id: string) => {
+    setFormError(null);
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Could not delete transaction");
+      }
+      await load();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -151,6 +170,14 @@ export default function TransactionsPage() {
                   {t.amount < 0 ? "-" : "+"}
                   ${Math.abs(t.amount).toFixed(2)}
                 </span>
+                <button
+                  onClick={() => onDelete(t.id)}
+                  disabled={deletingId === t.id}
+                  aria-label={`Delete ${t.description}`}
+                  className="shrink-0 rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {deletingId === t.id ? "Deleting…" : "Delete"}
+                </button>
               </li>
             ))}
           </ul>
