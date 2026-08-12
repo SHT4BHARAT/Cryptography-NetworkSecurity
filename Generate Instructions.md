@@ -1,5 +1,4 @@
 # RICR-HIM-1272
-This Repository contain the source code of the project develop by the team during the HackInMotion Hackathon organized by Raj Institute of Coding &amp; Robotics from 12th to 14th and 15th of August 2026
 
 General Instruction (HackInMotion 2026 )
 General Instructions & Guidelines
@@ -14,7 +13,8 @@ Grand Finale inside a moving metro
 
 1 Welcome to HackInMotion
 Congratulations on successfully registering for HackInMotion 2026! You are now officially a participant in one of Central India's most unique hackathons.
-Your HackInMotion journey begins with the participant portal. After logging in using your credentials, you are required to:
+
+- Your HackInMotion journey begins with the participant portal. After logging in using your credentials, you are required to:
 Create your team (1–4 participants)
 Invite or add your teammates
 Select your preferred hackathon theme
@@ -30,7 +30,8 @@ Team modifications after the hackathon starts may not be permitted.
 The Selection Process is strictly on a First Come First Serve basis for the first 400 Candidates only.
 
 3 Project Development Rules
-Every project must:
+
+- Every project must:
 Be an original solution developed during the official HackInMotion timeline.
 Solve the assigned problem statement under the selected theme.
 Be developed between 12 August and 15 August 2026.
@@ -39,7 +40,8 @@ Participants are encouraged to build scalable, production-inspired solutions tha
 
 4 AI Usage Policy
 AI development tools including ChatGPT, GitHub Copilot, Gemini, Claude, Cursor and similar tools are permitted throughout the hackathon.
-However:
+
+- However:
 Every participant must understand the code they submit.
 Every module should be explainable by the team member responsible for it.
 Judges may ask any participant to explain any part of the implementation.
@@ -50,7 +52,7 @@ AI should be used to enhance productivity—not replace engineering knowledge.
 The Team Leader must create the GitHub repository within 24 hours after the official problem statements are released.
 Naming format :- HackInMotion-TeamCode (Example: RICR-HIM-0001 )
 
-Every team member must:
+- Every team member must:
 Use their own GitHub account.
 Be added as a contributor.
 Contribute through individual commits.
@@ -73,7 +75,7 @@ Teams are encouraged to work using feature branches and merge their work into th
 Daily Git Evaluation
 The organizing committee will review every repository daily throughout the hackathon.
 
-Daily evaluation includes:
+- Daily evaluation includes:
 Individual commits
 Pull Request activity
 Repository progress
@@ -95,7 +97,7 @@ HackInMotion-TeamCode
 Teams may organize additional folders if required while maintaining a clean and professional repository structure.
 
 8 README Requirements
-Every repository must include a well-structured README containing:
+- Every repository must include a well-structured README containing:
 Project Title
 Team Name
 Team Members
@@ -114,7 +116,8 @@ Future Scope
 A well-written README helps judges understand your project efficiently.
 
 9 Project Expectations
-Every project submission should include:
+
+- Every project submission should include:
 Functional Frontend
 Working Backend APIs
 Database Integration
@@ -126,7 +129,8 @@ Documentation
 Deployment is highly recommended and will positively influence the overall evaluation.
 
 10 Judging Criteria
-Projects will be evaluated on:
+
+- Projects will be evaluated on:
 Problem Understanding
 Technical Implementation
 Innovation & Creativity
@@ -181,7 +185,8 @@ Members may also go home during the hackathon if needed.
 HackInMotion is a 72-hour hackathon. Teams must submit their developed project within the official timeline.
 
 14 Disqualification Criteria
-A team may be disqualified if:
+
+- A team may be disqualified if:
 The submitted project is copied from another source without proper understanding or attribution.
 The repository is created only on the final day.
 GitHub activity does not satisfy the minimum contribution requirements.
