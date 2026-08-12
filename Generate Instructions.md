@@ -21,6 +21,7 @@ Select your preferred hackathon theme
 Once your team has been created and your theme has been selected, no problem statement will be visible immediately. The official problem statement for your selected theme will only be released during the Opening Ceremony on 12 August 2026, marking the official beginning of the hackathon.
 
 2 Team Guidelines
+
 Every team must consist of 1–4 participants.
 A participant can join only one team.
 Teams must be created through the HackInMotion portal.
@@ -39,6 +40,7 @@ Include meaningful technical implementation instead of only UI or design prototy
 Participants are encouraged to build scalable, production-inspired solutions that solve real-world industry problems.
 
 4 AI Usage Policy
+
 AI development tools including ChatGPT, GitHub Copilot, Gemini, Claude, Cursor and similar tools are permitted throughout the hackathon.
 
 - However:
@@ -49,6 +51,7 @@ Blindly copying AI-generated code without understanding may lead to reduced scor
 AI should be used to enhance productivity—not replace engineering knowledge.
 
 5 GitHub Repository Guidelines
+
 The Team Leader must create the GitHub repository within 24 hours after the official problem statements are released.
 Naming format :- HackInMotion-TeamCode (Example: RICR-HIM-0001 )
 
@@ -60,15 +63,17 @@ Follow proper Git collaboration practices.
 Repositories showing contributions from only one participant may receive lower collaboration scores.
 
 6 Commit & Pull Request Guidelines
+
 GitHub activity is an important part of the evaluation process. Every participant is expected to maintain a clean, consistent and professional Git workflow throughout the hackathon.
-Commit Requirements
+
+- Commit Requirements
 Every participant must make a minimum of 10 meaningful commits during the 3-day development period (12–15 August 2026).
 Commits should be distributed throughout the hackathon and should represent actual development progress.
 Bulk commits made only on the final day are strongly discouraged.
 Every commit must contain a meaningful and descriptive commit message.
 Good examples: Added Login Authentication · Integrated OpenWeather API · Implemented Inventory Dashboard · Added AI Recommendation Engine · Fixed Payment Validation
 
-Poor examples: Update · Final · Done · Changes · Testing 
+- Poor examples: Update · Final · Done · Changes · Testing 
 Poor commit practices or meaningless commit messages may lead to negative marking.
 Pull Request Guidelines
 Teams are encouraged to work using feature branches and merge their work into the main branch using Pull Requests. Meaningful Pull Requests with proper descriptions demonstrate good software engineering practices and effective collaboration.
@@ -85,6 +90,7 @@ Code quality
 Failure to maintain regular development activity or not meeting the GitHub contribution criteria may result in penalties and, in severe cases, may lead to disqualification.
 
 7 Recommended Repository Structure
+
 HackInMotion-TeamCode
 ├── frontend
 ├── backend
@@ -97,6 +103,7 @@ HackInMotion-TeamCode
 Teams may organize additional folders if required while maintaining a clean and professional repository structure.
 
 8 README Requirements
+
 - Every repository must include a well-structured README containing:
 Project Title
 Team Name
@@ -113,6 +120,7 @@ Architecture Diagram
 Screenshots
 Deployment Link (if available)
 Future Scope
+
 A well-written README helps judges understand your project efficiently.
 
 9 Project Expectations
@@ -142,9 +150,11 @@ Scalability
 Real-World Impact
 Documentation
 Presentation Skills
+
 Judges may verify Git history, Pull Requests, repository structure, deployment, individual contributions, and code quality.
 
 11 Technical Viva
+
 Every participant should be able to explain the work they have contributed.
 Judges may ask questions related to:
 Individual contribution
@@ -156,6 +166,7 @@ Technology choices
 Technical challenges
 Future improvements
 Scalability
+
 Every participant is expected to actively participate during the technical discussion.
 
 12 Grand Finale
@@ -174,9 +185,11 @@ AI or advanced technologies used
 Business value
 Industry impact
 Future scope
+
 Judges will evaluate not only the working application but also the team's communication skills, product thinking, technical understanding, and overall presentation. Every team member is expected to actively participate during both the Live Demo and the Product Pitch.
 
 13 Venue, Laptop & Stay Policy
+
 You cannot take your laptop/machine outside the premises during the hackathon.
 A secure storage facility will be provided if you need to go outside — leave your machine safely stored on campus.
 Members are allowed to leave the premises for personal work, exams, or other commitments. Laptops must remain inside the campus at all times.
@@ -198,6 +211,7 @@ Only one participant is able to explain the project while other members cannot e
 Any unfair means or unethical practices are used during the hackathon.
 
 Final Note
+
 HackInMotion is more than a coding competition. It is an opportunity to collaborate, innovate, solve real-world industry problems, and transform ideas into impactful technology.
 
 Build with purpose.
