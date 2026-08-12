@@ -88,12 +88,19 @@ Spending insights derived from the user's own transactions.
 
 Kinds: `top-category`, `mom-trend` (month-over-month), `spike`.
 
+Response also includes a full spending breakdown:
+
+**200** — `{ "insights": [...], "breakdown": [ { "category": "Food & Dining", "amount": 243.45, "share": 41 }, ... ] }`
+
+`breakdown` is sorted by amount descending; `share` is the percentage of total spending.
+
 ---
 
 ## GET /api/subscriptions
 
 Detect recurring monthly subscriptions from transaction history (merchant +
-amount grouped, >= 3 occurrences, 25–35 day cadence).
+amount grouped, >= 3 occurrences, 25–35 day cadence). Detected subscriptions
+are upserted into the `subscriptions` table.
 
 **200** — `{ "subscriptions": [ { "merchant": "netflix com", "amount": 12.99, "cadence": "monthly", "occurrences": 4, "lastDetected": "2026-08-05" } ] }`
 

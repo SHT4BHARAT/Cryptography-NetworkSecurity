@@ -138,6 +138,11 @@ npm run dev
 # open http://localhost:3000
 ```
 
+A ready-to-import demo statement lives at
+[`assets/sample-transactions.csv`](assets/sample-transactions.csv) — use it to
+see the CSV importer, auto-categorization, subscriptions and health score in
+action immediately after signing up.
+
 ---
 
 ## Environment Variables
