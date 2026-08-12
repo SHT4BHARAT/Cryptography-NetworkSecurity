@@ -18,10 +18,14 @@ export default function SignupPage() {
     setError(null);
     setBusy(true);
     const supabase = createClient();
+    const redirectUrl = `${window.location.origin}/auth/callback`;
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: redirectUrl,
+      },
     });
     setBusy(false);
     if (error) return setError(error.message);
