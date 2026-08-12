@@ -72,7 +72,7 @@ README.md
 - Create: `backend/README.md`
 - Create: `backend/migrations/001_init.sql` (see Task 1)
 
-- [ ] **Step 1: Scaffold Next.js**
+- [x] **Step 1: Scaffold Next.js**
 
 ```bash
 cd frontend
@@ -82,7 +82,7 @@ npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir
 Run from repo root: `cd frontend && npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias "@/*"`
 Expected: Tailwind config exists, `app/` dir created.
 
-- [ ] **Step 2: Install dependencies**
+- [x] **Step 2: Install dependencies**
 
 ```bash
 cd frontend
@@ -91,7 +91,7 @@ npm install -D @types/papaparse
 ```
 Expected: packages written to `package.json`.
 
-- [ ] **Step 3: Create `.env.local.example`**
+- [x] **Step 3: Create `.env.local.example`**
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
@@ -99,7 +99,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend backend docs
@@ -113,7 +113,7 @@ git commit -m "chore: scaffold Next.js project with Supabase, Recharts, zod, pap
 **Files:**
 - Create: `backend/migrations/001_init.sql`
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 ```sql
 -- backend/migrations/001_init.sql
@@ -206,7 +206,7 @@ create policy "subscriptions own" on public.subscriptions for all using (auth.ui
 create policy "snapshots own" on public.health_snapshots for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
-- [ ] **Step 2: Create `backend/README.md`**
+- [x] **Step 2: Create `backend/README.md`**
 
 ```md
 # Backend
@@ -227,7 +227,7 @@ Endpoint -> handler map:
 See ..\api-documentation.md for full request/response details.
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add backend
@@ -244,7 +244,7 @@ git commit -m "feat: add initial Supabase schema with RLS policies"
 - Create: `frontend/lib/supabase/admin.ts`
 - Create: `frontend/middleware.ts`
 
-- [ ] **Step 1: Server client**
+- [x] **Step 1: Server client**
 
 ```ts
 // frontend/lib/supabase/server.ts
@@ -274,7 +274,7 @@ export function createClient() {
 }
 ```
 
-- [ ] **Step 2: Browser client**
+- [x] **Step 2: Browser client**
 
 ```ts
 // frontend/lib/supabase/client.ts
@@ -288,7 +288,7 @@ export function createClient() {
 }
 ```
 
-- [ ] **Step 3: Admin client (server only)** — used for email confirmation and server ops. Never import this into a client component.
+- [x] **Step 3: Admin client (server only)** — used for email confirmation and server ops. Never import this into a client component.
 
 ```ts
 // frontend/lib/supabase/admin.ts
@@ -301,7 +301,7 @@ export const admin = createClient(
 );
 ```
 
-- [ ] **Step 4: Middleware session guard**
+- [x] **Step 4: Middleware session guard**
 
 ```ts
 // frontend/middleware.ts
@@ -355,7 +355,7 @@ export const config = {
 };
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/lib frontend/middleware.ts
@@ -372,7 +372,7 @@ git commit -m "feat: add Supabase SSR clients and auth middleware"
 - Create: `frontend/app/api/auth/me/route.ts`
 - Create: `frontend/lib/validation/schemas.ts` (auth parts)
 
-- [ ] **Step 1: zod schemas**
+- [x] **Step 1: zod schemas**
 
 ```ts
 // frontend/lib/validation/schemas.ts
@@ -405,7 +405,7 @@ export const goalSchema = z.object({
 });
 ```
 
-- [ ] **Step 2: Login page**
+- [x] **Step 2: Login page**
 
 ```tsx
 // frontend/app/(auth)/login/page.tsx
@@ -454,7 +454,7 @@ export default function LoginPage() {
 }
 ```
 
-- [ ] **Step 3: Signup page** (same pattern; on success `signUp({ email, password, options: { data: { full_name } } })`, auto-confirm via redirect or admin confirms; on success push to `/dashboard`).
+- [x] **Step 3: Signup page** (same pattern; on success `signUp({ email, password, options: { data: { full_name } } })`, auto-confirm via redirect or admin confirms; on success push to `/dashboard`).
 
 ```tsx
 // frontend/app/(auth)/signup/page.tsx
@@ -510,7 +510,7 @@ export default function SignupPage() {
 }
 ```
 
-- [ ] **Step 4: /api/auth/me**
+- [x] **Step 4: /api/auth/me**
 
 ```ts
 // frontend/app/api/auth/me/route.ts
@@ -529,8 +529,8 @@ export async function GET() {
 }
 ```
 
-- [ ] **Step 5: Manual test** — `npm run dev`, sign up, verify redirect to `/dashboard`, call `/api/auth/me` for 200.
-- [ ] **Step 6: Commit**
+- [x] **Step 5: Manual test** — `npm run dev`, sign up, verify redirect to `/dashboard`, call `/api/auth/me` for 200.
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/app frontend/lib
@@ -544,7 +544,7 @@ git commit -m "feat: add signup/login pages and current-user API"
 **Files:**
 - Create: `frontend/lib/utils/csv.ts`
 
-- [ ] **Step 1: Write CSV utilities + unit tests**
+- [x] **Step 1: Write CSV utilities + unit tests**
 
 ```ts
 // frontend/lib/utils/csv.ts
@@ -599,7 +599,7 @@ export function parseCsv(text: string, userId: string): { rows: ParsedRow[]; has
 }
 ```
 
-- [ ] **Step 2: Write tests** (`frontend/lib/utils/csv.test.ts`). Install test runner if needed: `npm install -D vitest`.
+- [x] **Step 2: Write tests** (`frontend/lib/utils/csv.test.ts`). Install test runner if needed: `npm install -D vitest`.
 
 ```ts
 // frontend/lib/utils/csv.test.ts
@@ -642,14 +642,14 @@ describe("parseCsv", () => {
 });
 ```
 
-- [ ] **Step 3: Run tests — expect pass**
+- [x] **Step 3: Run tests — expect pass**
 
 ```
 cd frontend
 npx vitest run
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/lib frontend/package.json
@@ -664,7 +664,7 @@ git commit -m "feat: add tolerant CSV parser with dedupe hashing"
 - Create: `frontend/lib/categorization/rules.ts`
 - Create: `frontend/lib/categorization/categorize.ts`
 
-- [ ] **Step 1: Keyword rules**
+- [x] **Step 1: Keyword rules**
 
 ```ts
 // frontend/lib/categorization/rules.ts
@@ -724,7 +724,7 @@ export function mapLlmCategory(label: string): Category {
 }
 ```
 
-- [ ] **Step 2: Categorizer with LLM fallback (never on critical path)**
+- [x] **Step 2: Categorizer with LLM fallback (never on critical path)**
 
 ```ts
 // frontend/lib/categorization/categorize.ts
@@ -795,7 +795,7 @@ LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL=gpt-4o-mini
 ```
 
-- [ ] **Step 3: Write tests for the rule matcher**
+- [x] **Step 3: Write tests for the rule matcher**
 
 ```ts
 // frontend/lib/categorization/categorize.test.ts
@@ -821,14 +821,14 @@ describe("mapLlmCategory", () => {
 });
 ```
 
-- [ ] **Step 4: Run tests — expect pass**
+- [x] **Step 4: Run tests — expect pass**
 
 ```
 cd frontend
 npx vitest run
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/lib/categorization frontend/.env.local.example
@@ -844,7 +844,7 @@ git commit -m "feat: add rule-based categorizer with LLM fallback"
 - Create: `frontend/app/api/transactions/import/route.ts`
 - Create: `frontend/app/api/categorize/route.ts`
 
-- [ ] **Step 1: POST/GET /api/transactions**
+- [x] **Step 1: POST/GET /api/transactions**
 
 ```ts
 // frontend/app/api/transactions/route.ts
@@ -909,7 +909,7 @@ export async function GET(req: Request) {
 }
 ```
 
-- [ ] **Step 2: POST /api/transactions/import (CSV)**
+- [x] **Step 2: POST /api/transactions/import (CSV)**
 
 ```ts
 // frontend/app/api/transactions/import/route.ts
@@ -961,7 +961,7 @@ export async function POST(req: Request) {
 }
 ```
 
-- [ ] **Step 3: POST /api/categorize — retroactive re-categorize with LLM pass**
+- [x] **Step 3: POST /api/categorize — retroactive re-categorize with LLM pass**
 
 ```ts
 // frontend/app/api/categorize/route.ts
@@ -996,8 +996,8 @@ export async function POST() {
 }
 ```
 
-- [ ] **Step 4: Smoke test with curl** — run dev server, POST a JSON transaction (expect 201), upload a sample CSV (expect imported count + errors array).
-- [ ] **Step 5: Commit**
+- [x] **Step 4: Smoke test with curl** — run dev server, POST a JSON transaction (expect 201), upload a sample CSV (expect imported count + errors array).
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/app/api
@@ -1016,7 +1016,7 @@ git commit -m "feat: add transaction add/list/import/categorize APIs"
 - Create: `frontend/app/api/goals/route.ts`
 - Create: `frontend/app/api/subscriptions/route.ts`
 
-- [ ] **Step 1: Health score calculator + unit tests**
+- [x] **Step 1: Health score calculator + unit tests**
 
 ```ts
 // frontend/lib/analysis/score.ts
@@ -1090,7 +1090,7 @@ describe("computeScore", () => {
 });
 ```
 
-- [ ] **Step 2: Subscription detector + unit tests**
+- [x] **Step 2: Subscription detector + unit tests**
 
 ```ts
 // frontend/lib/analysis/subscriptions.ts
@@ -1145,7 +1145,7 @@ describe("detectSubscriptions", () => {
 });
 ```
 
-- [ ] **Step 3: GET /api/health** — compute from transactions + budgets + profile, upsert `health_snapshots`, return breakdown.
+- [x] **Step 3: GET /api/health** — compute from transactions + budgets + profile, upsert `health_snapshots`, return breakdown.
 
 ```ts
 // frontend/app/api/health/route.ts
@@ -1197,7 +1197,7 @@ export async function GET() {
 }
 ```
 
-- [ ] **Step 4: Budgets + goals + subscriptions routes**
+- [x] **Step 4: Budgets + goals + subscriptions routes**
 
 ```ts
 // frontend/app/api/budgets/route.ts
@@ -1277,14 +1277,14 @@ export async function GET() {
 }
 ```
 
-- [ ] **Step 5: Run unit tests — expect pass**
+- [x] **Step 5: Run unit tests — expect pass**
 
 ```
 cd frontend
 npx vitest run
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/app/api frontend/lib/analysis
@@ -1299,7 +1299,7 @@ git commit -m "feat: add health score, budgets, goals and subscription APIs"
 - Create: `frontend/lib/analysis/insights.ts`
 - Create: `frontend/app/api/analyze/route.ts`
 
-- [ ] **Step 1: Insights module**
+- [x] **Step 1: Insights module**
 
 ```ts
 // frontend/lib/analysis/insights.ts
@@ -1371,7 +1371,7 @@ describe("buildInsights", () => {
 });
 ```
 
-- [ ] **Step 2: GET /api/analyze**
+- [x] **Step 2: GET /api/analyze**
 
 ```ts
 // frontend/app/api/analyze/route.ts
@@ -1390,14 +1390,14 @@ export async function GET() {
 }
 ```
 
-- [ ] **Step 3: Run unit tests — expect pass**
+- [x] **Step 3: Run unit tests — expect pass**
 
 ```
 cd frontend
 npx vitest run
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/app/api/analyze frontend/lib/analysis/insights.ts
@@ -1416,7 +1416,7 @@ git commit -m "feat: add spending insights API"
 - Create: `frontend/app/(app)/budgets/page.tsx`
 - Create: `frontend/app/(app)/health/page.tsx` (detail view)
 
-- [ ] **Step 1: App shell with nav**
+- [x] **Step 1: App shell with nav**
 
 ```tsx
 // frontend/app/(app)/layout.tsx
@@ -1438,7 +1438,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 }
 ```
 
-- [ ] **Step 2: Dashboard (score, charts, insights) — server component**
+- [x] **Step 2: Dashboard (score, charts, insights) — server component**
 
 ```tsx
 // frontend/app/(app)/dashboard/page.tsx
@@ -1478,7 +1478,7 @@ export default async function DashboardPage() {
 }
 ```
 
-- [ ] **Step 3: Chart + list components (client)**
+- [x] **Step 3: Chart + list components (client)**
 
 ```tsx
 // frontend/components/HealthGauge.tsx
@@ -1545,11 +1545,11 @@ export function SubscriptionList({ subscriptions }: { subscriptions: S[] }) {
 }
 ```
 
-- [ ] **Step 4: Transactions + import pages (transaction list with manual add form; import page with file drop/upload calling `/api/transactions/import` and showing per-row errors from the response).**
-- [ ] **Step 5: Budgets page** — form posting to `/api/budgets`, list showing per-category budget vs spend with progress bar.
-- [ ] **Step 6: Health page** — renders full `/api/health` breakdown (score number, category breakdown list, recommendations).
-- [ ] **Step 7: Manual QA** — log in, add a transaction, upload sample CSV, confirm dashboard, budgets, health pages render.
-- [ ] **Step 8: Commit**
+- [x] **Step 4: Transactions + import pages (transaction list with manual add form; import page with file drop/upload calling `/api/transactions/import` and showing per-row errors from the response).**
+- [x] **Step 5: Budgets page** — form posting to `/api/budgets`, list showing per-category budget vs spend with progress bar.
+- [x] **Step 6: Health page** — renders full `/api/health` breakdown (score number, category breakdown list, recommendations).
+- [x] **Step 7: Manual QA** — log in, add a transaction, upload sample CSV, confirm dashboard, budgets, health pages render.
+- [x] **Step 8: Commit**
 
 ```bash
 git add frontend/app frontend/components
@@ -1565,7 +1565,7 @@ git commit -m "feat: add dashboard with health score, charts, budgets and import
 - Create: `frontend/components/EmptyState.tsx`
 - Create: `frontend/components/ErrorMessage.tsx`
 
-- [ ] **Step 1: Shared empty/error components**
+- [x] **Step 1: Shared empty/error components**
 
 ```tsx
 // frontend/components/EmptyState.tsx
@@ -1590,9 +1590,9 @@ export function ErrorMessage({ message }: { message: string }) {
 }
 ```
 
-- [ ] **Step 2: Audit every page** — replace raw empty axes/lists with `<EmptyState>`; any fetch error renders `<ErrorMessage>` with a retry hint; CSV import errors always visible.
-- [ ] **Step 3: Responsive pass** — verify charts stack under 768px, no horizontal scroll.
-- [ ] **Step 4: Commit**
+- [x] **Step 2: Audit every page** — replace raw empty axes/lists with `<EmptyState>`; any fetch error renders `<ErrorMessage>` with a retry hint; CSV import errors always visible.
+- [x] **Step 3: Responsive pass** — verify charts stack under 768px, no horizontal scroll.
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/components frontend/app
@@ -1611,7 +1611,7 @@ git commit -m "feat: add empty states and error handling across app"
 - Modify: `frontend/app/page.tsx` (landing redirects to login)
 - Modify: `frontend/app/layout.tsx` (metadata)
 
-- [ ] **Step 1: Sample seed data migration** (demo statements for a demo user id — placeholder user created via dashboard signup then copy its `id`):
+- [x] **Step 1: Sample seed data migration** (demo statements for a demo user id — placeholder user created via dashboard signup then copy its `id`):
 
 ```sql
 -- backend/migrations/002_seed.sql
@@ -1620,10 +1620,10 @@ insert into public.profiles (user_id, full_name, monthly_income)
 values ('<DEMO_USER_ID>', 'Demo User', 4500) on conflict (user_id) do nothing;
 ```
 
-- [ ] **Step 2: Write README.md** (full §8 structure) and `api-documentation.md` per the templates shown in Task 12 below and the repo-root copies already drafted.
-- [ ] **Step 3: Generate `architecture-diagram.png`** — build a simple diagram (boxes/lines) with any tool available (draw.io, Mermaid used from the CLI, or SVG hand-authored). Place at repo root.
-- [ ] **Step 4: Landing page** — `app/page.tsx` renders a short blurb + links to login/signup.
-- [ ] **Step 5: Commit**
+- [x] **Step 2: Write README.md** (full §8 structure) and `api-documentation.md` per the templates shown in Task 12 below and the repo-root copies already drafted.
+- [x] **Step 3: Generate `architecture-diagram.png`** — build a simple diagram (boxes/lines) with any tool available (draw.io, Mermaid used from the CLI, or SVG hand-authored). Place at repo root.
+- [x] **Step 4: Landing page** — `app/page.tsx` renders a short blurb + links to login/signup.
+- [x] **Step 5: Commit**
 
 ```bash
 git add README.md api-documentation.md architecture-diagram.png backend/migrations/002_seed.sql frontend/app
