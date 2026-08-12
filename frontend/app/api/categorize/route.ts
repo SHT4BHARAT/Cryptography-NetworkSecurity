@@ -12,7 +12,7 @@ export async function POST() {
 
   const { data: trx, error } = await supabase
     .from("transactions")
-    .select("id, description, amount")
+    .select("id, user_id, date, amount, description, dedupe_hash, created_at")
     .eq("user_id", user.id)
     .eq("category", "Uncategorized")
     .limit(200);
@@ -31,10 +31,26 @@ export async function POST() {
   const ids = new Set(trx.map((t) => t.id));
   const updates = [...map.entries()]
     .filter(([id, cat]) => cat !== "Uncategorized" && ids.has(id))
-    .map(([id, category]) => ({ id, category }));
+    .map(([id, category]) => {
+      const t = trx.find((row) => row.id === id)!;
+      return {
+        id,
+        user_id: t.user_id,
+        date: t.date,
+        amount: t.amount,
+        description: t.description,
+        dedupe_hash: t.dedupe_hash,
+        created_at: t.created_at,
+        category,
+      };
+    });
 
   if (updates.length) {
-    await supabase.from("transactions").upsert(updates, { onConflict: "id" });
+    const { error: upsertError } = await supabase
+      .from("transactions")
+      .upsert(updates, { onConflict: "id" });
+    if (upsertError)
+      return NextResponse.json({ error: upsertError.message }, { status: 400 });
   }
   return NextResponse.json({ updated: updates.length });
 }
