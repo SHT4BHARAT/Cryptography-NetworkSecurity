@@ -34,7 +34,8 @@ export default function HealthPage() {
           fetch("/api/health", { cache: "no-store" }),
           fetch("/api/subscriptions", { cache: "no-store" }),
         ]);
-        const [hData, sData] = await Promise.all([hRes.json(), sRes.json()]);
+        if (!hRes.ok) throw new Error(await hRes.json().then((d) => d?.error).catch(() => "Failed to load health score"));
+        const [hData, sData] = await Promise.all([hRes.json(), sRes.ok ? sRes.json() : Promise.resolve({ subscriptions: [] })]);
         if (!cancelled) {
           setHealth(hData as Health);
           setSubs(sData as Subs);

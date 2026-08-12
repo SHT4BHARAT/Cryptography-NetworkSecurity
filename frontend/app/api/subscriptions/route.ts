@@ -23,18 +23,5 @@ export async function GET() {
     }))
   );
 
-  if (subs.length) {
-    await supabase.from("subscriptions").upsert(
-      subs.map((s) => ({
-        user_id: user.id,
-        merchant: s.merchant,
-        amount: s.amount,
-        cadence: s.cadence,
-        last_detected: s.lastDetected,
-      })),
-      { onConflict: "user_id,merchant,amount" }
-    );
-  }
-
   return NextResponse.json({ subscriptions: subs });
 }

@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { currentMonthKey } from "@/lib/utils/date";
 
 type Budget = { id: string; category: string; month: string; amount: number };
 type Goal = { id: string; name: string; target_amount: number; saved_amount: number; deadline: string | null };
 type Tx = { date: string; amount: number; category: string };
 
-const currentMonth = () => new Date().toISOString().slice(0, 7);
+const currentMonth = () => currentMonthKey();
 
 export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<Budget[] | null>(null);
@@ -26,22 +27,25 @@ export default function BudgetsPage() {
   const [target, setTarget] = useState("");
   const [deadline, setDeadline] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (forMonth: string) => {
     setError(null);
     try {
       const [bRes, gRes] = await Promise.all([
         fetch("/api/budgets", { cache: "no-store" }),
         fetch("/api/goals", { cache: "no-store" }),
       ]);
-      const [bData, gData] = await Promise.all([bRes.json(), gRes.json()]);
+      const [bData, gData] = await Promise.all([
+        bRes.ok ? bRes.json() : Promise.resolve({ budgets: [] }),
+        gRes.ok ? gRes.json() : Promise.resolve({ goals: [] }),
+      ]);
       setBudgets(bData.budgets);
       setGoals(gData.goals);
 
       const tRes = await fetch("/api/transactions", { cache: "no-store" });
-      const tData = await tRes.json();
+      const tData = tRes.ok ? await tRes.json() : { transactions: [] };
       const byCat: Record<string, number> = {};
       for (const t of (tData.transactions ?? []) as Tx[]) {
-        if (t.amount < 0 && t.date.startsWith(currentMonth())) {
+        if (t.amount < 0 && t.date.startsWith(forMonth)) {
           byCat[t.category] = (byCat[t.category] ?? 0) + Math.abs(t.amount);
         }
       }
@@ -53,8 +57,8 @@ export default function BudgetsPage() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch
-    load();
-  }, [load]);
+    load(month);
+  }, [load, month]);
 
   const addBudget = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +72,7 @@ export default function BudgetsPage() {
     if (!res.ok) return setError(data.error ?? "Could not save budget");
     setCat("");
     setBAmount("");
-    await load();
+    await load(month);
   };
 
   const addGoal = async (e: React.FormEvent) => {
@@ -84,7 +88,7 @@ export default function BudgetsPage() {
     setName("");
     setTarget("");
     setDeadline("");
-    await load();
+    await load(month);
   };
 
   const visibleBudgets = (budgets ?? []).filter((b) => b.month.startsWith(month));
