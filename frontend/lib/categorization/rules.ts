@@ -88,7 +88,8 @@ function normalizeLabel(s: string): string {
 }
 
 export function mapLlmCategory(label: string): Category {
-  const normalized = normalizeLabel(label);
+  const normalized = normalizeLabel(String(label ?? ""));
+  if (!normalized) return "Uncategorized";
   for (const key of Object.keys(OUTPUT_CATEGORY)) {
     if (
       normalized.includes(normalizeLabel(key)) ||

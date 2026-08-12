@@ -18,4 +18,9 @@ describe("mapLlmCategory", () => {
     expect(mapLlmCategory("billsUtilities")).toBe("Bills & Utilities");
     expect(mapLlmCategory("gibberish")).toBe("Uncategorized");
   });
+  it("never maps an empty/unconfigured LLM reply to a real category", () => {
+    expect(mapLlmCategory("")).toBe("Uncategorized");
+    expect(mapLlmCategory("   ")).toBe("Uncategorized");
+    expect(mapLlmCategory(undefined as unknown as string)).toBe("Uncategorized");
+  });
 });
