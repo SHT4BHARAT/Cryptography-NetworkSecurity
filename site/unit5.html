@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit V — Firewalls, Forensics &amp; Hacking | CNS Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-unit="unit5">
+
+<header class="topbar">
+  <span class="brand">⌗ CNS <span>FIELD MANUAL</span></span>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="unit1.html">Unit I</a>
+    <a href="unit2.html">Unit II</a>
+    <a href="unit3.html">Unit III</a>
+    <a href="unit4.html">Unit IV</a>
+    <a href="unit5.html" class="active">Unit V</a>
+    <a href="flashcards.html">Flashcards</a>
+    <a href="mindmap.html">Mind Map</a>
+    <a href="tools.html">Tools</a>
+    <a href="quiz.html">Quiz</a>
+  </nav>
+  <div class="search-wrap">
+    <input type="search" id="searchBox" placeholder="Search this unit…" aria-label="Search this unit">
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="On this page"></nav>
+  <main class="content-wrap">
+    <div class="paper" id="content"></div>
+  </main>
+</div>
+
+<script type="text/markdown" id="md-source">
+# UNIT V — IP/Web Security, Firewalls &amp; Trusted Systems, Computer Forensics, and Ethical Hacking
+
+**Overall exam weightage estimate (relative to the full 5-unit course): 22%** — This unit packs four distinct high-yield theory blocks (IPSec, Firewalls, Forensics, Hacking lifecycle) that examiners love for 5-mark and 10-mark descriptive questions because they are diagram-friendly and definition-heavy with almost no numerical risk, making it one of the two or three highest-yield units in the course alongside Unit II and Unit III.
+
+---
+
+## 1. TOPIC WEIGHTAGE ANALYSIS
+
+| # | Topic | Est. Internal Weightage | Tier | Why |
+|---|-------|--------------------------|------|-----|
+| 1 | Firewalls (types, operation, design principles, architectures) | 25% | **Must-Study** | Most frequently asked diagram question in this unit; DMZ/screened-subnet diagram and firewall-type comparison table appear almost every year |
+| 2 | Hacking fundamentals (hacker classes, footprinting, scanning, system hacking cycle) | 25% | **Must-Study** | Directly testable as definition + "explain the cycle" questions; overlaps with practical/viva questions too |
+| 3 | Computer Forensics (need, objectives, investigation stages, incident handling) | 20% | **Must-Study** | Two full lifecycles (forensic stages vs incident handling) are a classic "compare/contrast" 10-marker |
+| 4 | IP Security (AH, ESP, modes, SA, IKE) | 18% | **Must-Study** | Conceptually dense but a favorite for "differentiate AH and ESP" and packet-diagram questions |
+| 5 | Trusted Systems (TCB, reference monitor) | 6% | Must-Study (short) | Usually a 2–5 mark definition-only question, rarely elaborated further |
+| 6 | Web Security (HTTPS/TLS overview, ties to Unit IV) | 6% | Low-Yield (as standalone) | Mostly referenced briefly since XSS/SQLi detail already lives in Unit IV; asked as a short note, not a full essay |
+
+**Why this distribution:** Examiners in security courses favor topics that produce clean diagrams (firewall/DMZ architecture, AH/ESP packet layout) and clean sequential lifecycles (forensic stages, incident handling, hacking cycle) because these are easy to grade objectively. Web Security is kept low-yield here specifically *because* the detailed attack mechanics (XSS, SQLi) are Unit IV's territory — Unit V only needs the defensive/architectural view (TLS, secure design). Trusted Systems is real but narrow (usually just TCB + reference monitor definitions), so it can't carry much weight on its own.
+
+---
+
+## 2. COMPREHENSIVE THEORY
+
+### 2.1 IP Security (IPSec)
+
+**Purpose.** IPSec is a suite of protocols that adds security services **at the network (IP) layer**, rather than the application or transport layer. Because it works at the IP layer, it is transparent to applications — any application running over IP is automatically protected without modification. IPSec provides:
+
+- **Access control**
+- **Connectionless integrity** (each packet checked independently)
+- **Data origin authentication** (verifying the sender)
+- **Protection against replay attacks** (using sequence numbers)
+- **Confidentiality** (encryption of payload)
+- **Limited traffic-flow confidentiality** (in tunnel mode)
+
+It is the foundation of VPNs (Virtual Private Networks) that connect branch offices or remote users securely over the public Internet.
+
+#### 2.1.1 Security Associations (SA)
+
+A **Security Association** is a one-way (simplex) logical connection between two communicating entities that defines the security parameters to be used for that traffic — the encryption algorithm, key, key lifetime, authentication algorithm, and sequence number counter. It is uniquely identified by three things:
+
+1. **Security Parameter Index (SPI)** — a 32-bit identifier carried in the AH/ESP header
+2. **Destination IP address**
+3. **Security protocol identifier** (AH or ESP)
+
+Because an SA is unidirectional, two SAs are required for a normal two-way conversation (one for each direction). A collection of SAs is stored in the **Security Association Database (SAD)**, and the rules deciding which traffic needs protection (and how) are stored in the **Security Policy Database (SPD)**.
+
+#### 2.1.2 AH — Authentication Header
+
+AH provides **integrity, data-origin authentication, and anti-replay protection**, but **NOT confidentiality** (no encryption). It authenticates as much of the IP packet as possible, including most of the outer IP header fields (except those that change in transit, like TTL). It uses a keyed-hash MAC (e.g., HMAC-SHA) computed over the packet contents.
+
+**Use case:** when you need to prove the packet wasn't tampered with and really came from the claimed sender, but confidentiality is not required (e.g., because it's not sensitive, or is already encrypted elsewhere).
+
+#### 2.1.3 ESP — Encapsulating Security Payload
+
+ESP provides **confidentiality (encryption)** of the payload, plus optionally **integrity, data-origin authentication, and anti-replay protection** (ESP's auth trailer covers less of the header than AH does — it authenticates the ESP header/payload/trailer but not the outer IP header). ESP is far more commonly used in practice than AH because it offers confidentiality, which most real deployments need.
+
+#### 2.1.4 Transport Mode vs Tunnel Mode
+
+**Transport Mode** — protects only the **payload** of the IP packet (e.g., TCP/UDP segment); the original IP header is kept intact and used for routing. Used for **end-to-end** communication between two hosts.
+
+```
+Transport Mode (ESP example):
+
+Original packet:
++-----------+--------------------+
+|  IP Hdr   |   TCP + Data       |
++-----------+--------------------+
+
+After ESP (Transport Mode):
++-----------+---------+--------------------+---------+-----------+
+|  IP Hdr   | ESP Hdr |   TCP + Data        | ESP Trl | ESP Auth  |
++-----------+---------+--------------------+---------+-----------+
+             \_____________ encrypted _______________/
+                        \__________ authenticated __________/
+```
+
+**Tunnel Mode** — protects the **entire original IP packet** (header + payload) by encapsulating it inside a brand-new IP packet with a new outer IP header. Used for **gateway-to-gateway** (site-to-site VPN) communication, or host-to-gateway, because it hides the original source/destination addresses from outside observers (traffic-flow confidentiality).
+
+```
+Tunnel Mode (ESP example):
+
+Original packet:
++-----------+--------------------+
+| Orig IP   |   TCP + Data       |
++-----------+--------------------+
+
+After ESP (Tunnel Mode):
++-----------+---------+-----------+--------------------+---------+-----------+
+| New IP Hdr| ESP Hdr | Orig IP Hdr|   TCP + Data       | ESP Trl | ESP Auth  |
++-----------+---------+-----------+--------------------+---------+-----------+
+                        \_______________ encrypted ________________/
+                       \___________ authenticated ____________/
+```
+
+The new outer IP header carries the addresses of the two security gateways (e.g., two corporate firewalls); the original inner IP header (with the real hosts' addresses) is hidden inside the encrypted portion.
+
+#### 2.1.5 IKE — Internet Key Exchange
+
+Manually configuring SAs (algorithms + keys) on every device doesn't scale. **IKE** automates this: it negotiates the SA parameters and securely establishes the shared secret keys used by AH/ESP, typically using a **Diffie-Hellman exchange** for key agreement combined with authentication (pre-shared keys or certificates) to prevent man-in-the-middle attacks. IKE operates in two phases:
+
+- **Phase 1** — establishes a secure, authenticated channel between the two peers (an "IKE SA")
+- **Phase 2** — uses that secure channel to negotiate the actual IPSec SAs (AH/ESP parameters) for the real data traffic
+
+---
+
+### 2.2 Web Security
+
+**Role of HTTPS/TLS.** Plain HTTP sends data in cleartext, so anyone on the network path (Wi-Fi sniffer, malicious router, ISP) can read or modify it. **TLS (Transport Layer Security)**, run underneath HTTP as **HTTPS**, provides:
+
+- **Confidentiality** — symmetric encryption of the session (keys agreed via a TLS handshake, often using Diffie-Hellman/ECDHE for forward secrecy)
+- **Integrity** — a MAC (or AEAD cipher) detects any tampering with data in transit
+- **Server authentication** — the server presents a **digital certificate** (see Unit III) signed by a trusted CA, so the browser can verify it is talking to the genuine server and not an impersonator (defeats simple MITM attacks)
+
+TLS operates at a layer between the transport layer (TCP) and the application layer, so it protects the data an application sends without the application needing to implement crypto itself.
+
+**Common web-layer threats (brief, detail is in Unit IV):**
+
+- **SQL Injection (SQLi)** — attacker injects malicious SQL through unsanitized input fields to read/modify/delete database contents or bypass authentication.
+- **Cross-Site Scripting (XSS)** — attacker injects malicious script into a page viewed by other users, executing in their browser session (stealing cookies, session tokens, etc.).
+- **Session Hijacking** — attacker steals or predicts a valid session token to impersonate a logged-in user.
+
+These are application-logic flaws; TLS does **not** prevent them because TLS only secures the transport channel, not what the application does with the data it receives. This is why "Web Security" needs defense at multiple layers simultaneously.
+
+**Secure web architecture principles:**
+
+- **Input validation and output encoding** at every trust boundary (never trust client-supplied data).
+- **Least privilege for the web server/DB accounts** — the web app's DB user should not have admin rights.
+- **Defense in depth** — TLS + firewall + WAF (Web Application Firewall) + secure coding, not any single control alone.
+- **Segregation** of the web/application tier from the internal network (see DMZ, Section 2.3.5).
+- **Session management hardening** — secure, HttpOnly, SameSite cookies; session tokens with sufficient entropy and short lifetimes.
+
+---
+
+### 2.3 Firewalls
+
+**Definition.** A firewall is a network security device/software that enforces an access-control policy between two networks (typically a trusted internal network and an untrusted external network like the Internet) by inspecting and filtering traffic according to a defined rule set. It acts as a **choke point** through which all traffic between the two networks must pass.
+
+#### 2.3.1 Types of Firewalls
+
+**1. Packet-Filtering Firewall**
+Operates at the **network/transport layer** (Layer 3/4). It examines each packet independently — source/destination IP, source/destination port, protocol (TCP/UDP/ICMP) — against a static rule table (ACL) and allows or drops it. It has **no memory of previous packets** (stateless).
+
+- *Pros:* Fast, simple, low overhead, transparent to users.
+- *Cons:* Cannot detect application-layer attacks; vulnerable to IP spoofing; cannot track whether a packet belongs to an established connection (e.g., can't easily tell a spoofed "ACK" packet from a real one).
+
+**2. Stateful Inspection Firewall**
+Also works mainly at Layer 3/4 but **maintains a state table** of all active connections (source/dest IP+port, sequence numbers, connection state). It allows packets only if they match an existing, legitimately-established connection (or are a valid new connection request per policy). This defeats many spoofing tricks that fool plain packet filters.
+
+- *Pros:* More secure than stateless filtering, still reasonably fast, understands TCP connection state (SYN, ESTABLISHED, FIN etc.).
+- *Cons:* More resource-intensive (must maintain state table); still generally blind to application-layer payload content.
+
+**3. Application-Level Gateway (Proxy Firewall)**
+Operates at the **application layer** (Layer 7). It acts as a relay/proxy for specific applications (HTTP proxy, FTP proxy, etc.) — the client connects to the proxy, and the proxy makes a separate connection to the real destination on the client's behalf, inspecting the actual application data/commands.
+
+- *Pros:* Can understand and filter on application semantics (e.g., block specific FTP commands, block malicious HTTP payloads), hides internal network topology completely, strongest security.
+- *Cons:* Slower (extra processing per connection), needs a separate proxy per application/protocol, less transparent, doesn't scale as well.
+
+**4. Circuit-Level Gateway**
+Operates at the **session layer**. It does not inspect individual packets' content but simply validates that a TCP handshake is legitimate before allowing the session, then relays data without further per-packet content inspection. Often used as part of a larger proxy firewall (e.g., SOCKS).
+
+- *Pros:* Faster than an application gateway since it doesn't inspect payload; hides internal network.
+- *Cons:* Doesn't filter individual packets/content once the session is approved, so it can't catch application-layer attacks within an approved session.
+
+**5. Next-Generation Firewall (NGFW)**
+Combines traditional stateful filtering with **deep packet inspection (DPI)**, **application awareness/identification** (regardless of port used), integrated **Intrusion Prevention System (IPS)**, and often user-identity-based policies and threat-intelligence feeds.
+
+- *Pros:* Single device handling multiple layers of defense, application-aware even when apps use non-standard ports.
+- *Cons:* Higher cost and complexity; more processing overhead.
+
+#### 2.3.2 Operation
+
+A firewall operates by matching each packet/connection attempt against an **ordered rule list (Access Control List — ACL)**, top to bottom. The **first matching rule wins** and its action (ALLOW/DENY) is applied; if no rule matches, the **default policy** applies. Rules typically specify: source IP/subnet, destination IP/subnet, source port, destination port, protocol, and action.
+
+#### 2.3.3 Design Principles
+
+- **Default-deny (fail-safe defaults):** Everything is blocked unless explicitly allowed. This is safer than "default-allow, block known-bad" because you cannot enumerate every possible attack in advance.
+- **Least privilege:** Each rule should permit only the minimum access needed for legitimate function — no broader ports/hosts than necessary.
+- **Choke point:** All traffic between trust zones is forced through the firewall so that a single point of control/monitoring exists (no bypass paths).
+- **Defense in depth:** The firewall is one layer among several (host hardening, IDS, encryption) — never the sole defense.
+- **Fail-safe/fail-secure behavior:** If the firewall itself fails or crashes, it should fail closed (block all traffic) rather than fail open (allow all traffic).
+- **Simplicity/auditability:** Rule sets should be as simple as possible so they can be reviewed and audited for mistakes — complex rule sets hide misconfigurations.
+
+#### 2.3.4 Architectures
+
+**Bastion Host** — a heavily hardened, closely monitored host exposed to the untrusted network (Internet) that acts as the single point of contact — e.g., a proxy server or a mail relay. Since it is the most exposed system, it runs a minimal set of services, all unnecessary services/accounts removed, and is watched closely for compromise attempts.
+
+**Dual-Homed Host** — a single host with **two network interfaces** (one connected to the internal network, one to the external network) that routes/proxies traffic between them, with IP forwarding disabled at the OS level so that the only path between the networks is through application-level proxying on that host.
+
+```
+Dual-Homed Host architecture:
+
+  Internet  ---- [ Dual-Homed Host ] ---- Internal Network
+              (NIC-1)            (NIC-2)
+              (no direct IP forwarding between NICs;
+               application proxy software mediates all traffic)
+```
+
+**Screened Subnet (DMZ — Demilitarized Zone)** — the most common and most exam-tested architecture. It creates a buffer network (the DMZ) between the internal trusted network and the untrusted Internet, using **two firewalls**: an external firewall (Internet-facing) and an internal firewall (facing the private LAN). Public-facing servers (web server, mail server, DNS server) sit in the DMZ, so that even if one is compromised, the attacker still has to breach the *second* firewall to reach the truly private internal network.
+
+```
+                    SCREENED SUBNET / DMZ ARCHITECTURE
+
+        Internet
+           |
+           |
+   +---------------+
+   | External       |   <-- allows only traffic to/from DMZ servers
+   | Firewall/Router|       (e.g., port 80/443 to web server)
+   +---------------+
+           |
+           |          DMZ (Demilitarized Zone)
+   +-----------------------------------------------+
+   |   +----------+   +----------+   +----------+  |
+   |   |Web Server|   |Mail Relay|   |DNS Server|  |
+   |   +----------+   +----------+   +----------+  |
+   +-----------------------------------------------+
+           |
+   +---------------+
+   | Internal       |   <-- allows only specific, needed traffic
+   | Firewall       |       from DMZ into internal LAN
+   +---------------+
+           |
+           |
+   Internal (Trusted) LAN
+   [ Workstations | DB Servers | File Servers ]
+```
+
+The key idea: an attacker who compromises a DMZ server (e.g., the web server) still faces the **internal firewall** before reaching the sensitive internal LAN — there is no single point of failure between the Internet and the internal network.
+
+#### 2.3.5 Trusted Systems
+
+A **Trusted System** is a system that has been evaluated (or engineered) to provide a defined level of assurance that it will enforce a specified security policy correctly and cannot be bypassed.
+
+**Trusted Computing Base (TCB):** the totality of protection mechanisms within a computer system — hardware, firmware, and software — that together enforce the security policy. The TCB must be kept as small and simple as possible ("minimize the TCB") because everything within it must be trusted completely; any flaw inside the TCB can compromise the entire system's security, whereas flaws *outside* the TCB (in less-privileged application code) are contained.
+
+**Reference Monitor concept:** an abstract security-enforcement mechanism that mediates **every** access by a subject (user/process) to an object (file/resource) according to the security policy. For a reference monitor implementation to be trustworthy, it must satisfy three properties:
+
+1. **Complete mediation** — it must be invoked for *every* access, with no way to bypass it.
+2. **Isolation (tamper-proof)** — the reference monitor itself must be protected from unauthorized modification.
+3. **Verifiability (small and simple enough to analyze)** — it must be small enough to be thoroughly tested/verified for correctness (this is why it should be a core, minimal part of the TCB).
+
+---
+
+### 2.4 Computer Forensics
+
+**Need for computer forensics.** As crimes increasingly involve digital devices (as the target, the tool, or a repository of evidence), organizations need a rigorous, scientific process to recover, preserve, and present digital evidence such that it (a) proves what happened and (b) is admissible in a court of law. Ad hoc examination of a compromised system (e.g., an IT admin poking around without procedure) can destroy evidence, corrupt timestamps, or make findings legally worthless.
+
+**Objectives:**
+
+- To identify, collect, and preserve digital evidence without altering it.
+- To determine the **root cause** and full scope of a security incident or crime.
+- To reconstruct the sequence of events (a timeline) that occurred.
+- To identify the perpetrator(s) where possible.
+- To produce evidence and findings in a form that is legally admissible and withstands cross-examination in court.
+- To support organizational compliance, insurance claims, and post-incident process improvement.
+
+#### 2.4.1 Stages/Steps of Forensic Investigation
+
+The generally accepted forensic process follows this sequence:
+
+**1. Identification** — Recognizing and determining that an incident has occurred and identifying *what* potential sources of evidence exist (which systems, devices, logs, storage media are relevant). This stage decides the scope of the investigation.
+
+**2. Preservation** — Ensuring evidence is not altered, damaged, or destroyed from the moment it is identified. This includes isolating affected systems (e.g., disconnecting from network without powering off, if volatile memory capture is needed first), write-blocking storage devices, and starting the **chain of custody** — a documented, unbroken record of who has handled the evidence, when, and why, which is essential for the evidence to be admissible in court.
+
+**3. Collection** — Actually acquiring the evidence: e.g., creating a bit-for-bit forensic image (exact copy) of a hard drive, capturing volatile RAM contents, exporting logs, seizing devices. Collection must use forensically sound methods (e.g., hash-verified imaging using MD5/SHA so the copy can later be proven identical to the original) and always work on copies, never the original evidence, wherever possible.
+
+**4. Examination** — Systematically processing the collected data to extract relevant information — e.g., recovering deleted files, extracting file metadata, searching for keywords, decrypting where possible. This is a technical, largely mechanical step of surfacing candidate evidence.
+
+**5. Analysis** — Interpreting the examined data to draw conclusions — correlating timestamps across systems, reconstructing the attacker's actions, linking artifacts to a suspect or method, determining intent and impact. This is the intellectual step of turning raw artifacts into a coherent narrative/finding.
+
+**6. Presentation/Reporting** — Documenting and communicating the findings clearly, objectively, and in a manner understandable to non-technical stakeholders (management, law enforcement, courts). The report must be reproducible (another examiner following the same steps should reach the same conclusions) and must maintain the chain of custody documentation throughout.
+
+**Application to tracking cybercriminals specifically:** In a cybercrime investigation, *Identification* pinpoints which compromised servers/logs/network devices matter; *Preservation* stops attackers (or panicking admins) from wiping logs, and preserves volatile data like active network connections and RAM before it's lost on reboot; *Collection* acquires disk images, memory dumps, firewall/IDS logs, and network packet captures; *Examination* recovers attacker tools, malware samples, deleted command history, and log entries; *Analysis* correlates IP addresses, timestamps, and TTPs (tactics, techniques, procedures) across systems to build an attribution trail back to the attacker's infrastructure or identity; *Presentation* produces the report used for prosecution, insurance, or regulatory disclosure.
+
+#### 2.4.2 Incident Handling (Incident Response Lifecycle)
+
+This is a **distinct** lifecycle from forensic investigation — incident handling is about **operationally responding to and recovering from** a security incident, while forensics is about **investigating and building evidence** (the two often run in parallel, forensics is one supporting activity within incident handling).
+
+**1. Preparation** — Building readiness *before* an incident occurs: incident response policy/plan, a trained response team (CSIRT), tools (forensic software, jump bags), communication plans, backups, and regular drills. This is the only phase that happens continuously, not "during" an incident.
+
+**2. Identification** — Detecting and confirming that a security incident has actually occurred (as opposed to a false alarm), using IDS alerts, log anomalies, user reports, etc., and determining its initial scope and severity.
+
+**3. Containment** — Limiting the damage and preventing the incident from spreading further, e.g., isolating infected hosts from the network, disabling compromised accounts, blocking malicious IPs at the firewall. Often split into *short-term containment* (immediate stopgap) and *long-term containment* (temporary fix while a permanent solution is built).
+
+**4. Eradication** — Removing the root cause of the incident entirely from the environment — deleting malware, closing the exploited vulnerability, patching systems, removing attacker-created backdoor accounts.
+
+**5. Recovery** — Restoring affected systems back to normal, verified-clean production operation — restoring from clean backups, rebuilding systems, and closely monitoring for any signs of the attacker returning before declaring the incident closed.
+
+**6. Lessons Learned (Post-Incident Review)** — After the incident is resolved, the team documents what happened, how effectively the response worked, and what should change (policy, tooling, training) to prevent recurrence or respond faster next time. This closes the loop back into an updated **Preparation** phase.
+
+---
+
+### 2.5 Hacking
+
+#### 2.5.1 Classes of Hackers
+
+- **Black Hat Hacker** — breaks into systems **without authorization**, for malicious or personal gain (theft, sabotage, extortion, espionage). Motive: financial gain, malice, ideology, or notoriety. This is what is popularly meant by "hacker/cracker" in a criminal sense.
+
+- **White Hat Hacker (Ethical Hacker)** — uses the same techniques as black hats but **with explicit authorization** from the system owner, to find and fix vulnerabilities before criminals do (e.g., penetration testers, bug-bounty researchers). Motive: improving security, usually as a paid/contracted professional service.
+
+- **Grey Hat Hacker** — operates **between the two**: may probe or exploit systems without prior authorization (technically illegal), but without malicious intent — often to expose a vulnerability publicly or notify the owner, sometimes for recognition rather than profit. Motive: curiosity, recognition, or a self-appointed "public service," but without the legal cover white hats have.
+
+- **Suicide Hacker** — a hacker who carries out an attack **knowing full well they will be caught and prosecuted**, and does not care about the legal consequences because they are driven by a cause (ideology, activism, revenge) they consider more important than personal safety/freedom. Motive: ideological/political statement or extreme grievance, willing to accept personal loss to achieve the attack's goal.
+
+#### 2.5.2 Footprinting (Passive Reconnaissance)
+
+**Footprinting** is the first phase of information gathering about a target, typically performed **passively** — without directly interacting with target systems in a way that could alert them — to build a profile of the organization's digital footprint before any active probing begins. Information gathered and typical methods:
+
+- **WHOIS lookups** — reveal domain registration details: registrant name/organization, administrative/technical contacts, registration and expiry dates, and often the **name servers** used, which can hint at hosting provider.
+- **DNS records** — querying DNS (via tools like `nslookup`/`dig`) reveals subdomains, mail server addresses (MX records), IP addresses (A records), and sometimes internal naming conventions, which map out the organization's external-facing infrastructure.
+- **Social media reconnaissance** — employee LinkedIn/Twitter/Facebook profiles can reveal organizational structure, technologies in use (from job titles/skills listed), and even personal details useful for social engineering or password guessing.
+- **Job postings** — a company's own job listings often reveal the specific technologies, software versions, and infrastructure (e.g., "experience with Cisco ASA firewalls and Oracle 19c") the organization uses internally, directly informing an attacker's exploit selection.
+- **Company website and public documents** — organizational charts, press releases, and metadata embedded in publicly posted documents (PDFs, Office files) can reveal internal usernames, software versions, and file-path structures.
+- **Google hacking/OSINT search operators** — using advanced search queries to find exposed files, login portals, or misconfigured directories indexed by search engines.
+
+The defining characteristic is that footprinting does **not** send probing traffic directly to the target's systems — it relies on publicly/passively available information.
+
+#### 2.5.3 Scanning
+
+Scanning is the **active** phase that follows footprinting — the attacker now directly interacts with target systems to discover live hosts, open ports, and vulnerabilities.
+
+- **Port Scanning** — determines which TCP/UDP ports are open (and hence which services are listening) on a target host. The classic techniques:
+  - **TCP Connect Scan** — completes the full **three-way TCP handshake** (SYN → SYN-ACK → ACK) with each target port; if the handshake completes, the port is open. It is reliable but easily logged by the target (a full connection is established).
+  - **TCP SYN Scan ("half-open" scan)** — sends only a **SYN** packet; if a **SYN-ACK** comes back, the port is open (the scanner then sends a **RST** instead of completing the handshake), and if a **RST** comes back, the port is closed. Because the connection is never fully established, it is stealthier and less likely to be logged by the application, though modern IDS/firewalls can still detect it.
+  - *Purpose:* to enumerate the specific services (HTTP, SSH, RDP, SMB, etc.) reachable on a target, which narrows down what attacks are even possible.
+
+- **Network Scanning (Host Discovery)** — determines **which hosts on a network/subnet are alive** (before bothering to port-scan each one individually), typically via ICMP echo (ping) sweeps, ARP scans on local subnets, or TCP/UDP probes to commonly-open ports. *Purpose:* to map the live population of a target network so scanning effort is focused only on real, reachable hosts.
+
+- **Vulnerability Scanning** — goes a step further than port scanning: it identifies the specific **software/service versions** running on open ports and cross-references them against databases of **known vulnerabilities (CVEs)** to flag hosts that are exploitable (e.g., "this server is running an Apache version vulnerable to CVE-2021-XXXXX"). *Purpose:* to prioritize which discovered hosts/services are actually attackable, rather than merely reachable — tools like Nessus/OpenVAS/Nexpose automate this.
+
+Each scanning type answers a progressively narrower question: Network scanning asks "*who is alive?*", port scanning asks "*what services are they running?*", and vulnerability scanning asks "*which of those services are actually exploitable?*"
+
+#### 2.5.4 E-Mail Spiders
+
+**E-mail spiders** (email harvesters) are automated bots/crawlers that scan web pages, forums, newsgroups, and public documents to extract e-mail addresses (often by pattern-matching the `user@domain` format) for later use. Attackers use harvested addresses for **spam campaigns**, **phishing attacks**, or as a starting point for **social engineering** and **credential-guessing** attacks against an organization's employees (harvested addresses often reveal the organization's email-naming convention, e.g., `firstname.lastname@company.com`, making it easy to guess other employees' addresses too).
+
+#### 2.5.5 Overview of the System Hacking Cycle
+
+The system hacking cycle describes the standard sequence an attacker follows to compromise and exploit a target system:
+
+**1. Reconnaissance** — Gathering information about the target (this is where footprinting fits in) — passively and sometimes actively — to understand the organization, its people, and its infrastructure before touching any target system directly.
+
+**2. Scanning** — Actively probing the target's network to find live hosts, open ports, and vulnerable services (port scanning, network scanning, vulnerability scanning as described above), narrowing down the specific attack surface.
+
+**3. Gaining Access** — Exploiting a discovered vulnerability (e.g., an unpatched service, weak/default credentials, a misconfigured application) to obtain some level of access to the target system — this is where the actual "break-in" happens (e.g., via buffer-overflow exploit, SQL injection, credential-based login, phishing payload execution).
+
+**4. Maintaining Access** — Once inside, the attacker installs **backdoors, rootkits, or Trojans** (Unit IV territory) to ensure they can regain entry later even if the original vulnerability is patched, and often works to escalate privileges to gain deeper/administrator-level control.
+
+**5. Clearing Tracks** — The attacker deletes or alters log files, hides malicious files/processes, and disables or evades monitoring/auditing tools to avoid detection and erase evidence of the intrusion, making forensic reconstruction (Section 2.4) harder.
+
+**Connection back to Unit I's penetration-testing phases:** This exact cycle (Recon → Scan → Exploit → Maintain Access → Cover Tracks) is the *offensive* attacker's playbook, and it is deliberately mirrored — under authorization and with reporting instead of track-covering — by the **penetration testing** methodology from Unit I (Planning/Recon → Scanning → Gaining Access/Exploitation → Maintaining Access → **Reporting** in place of clearing tracks). A pentester follows the same five stages as a malicious attacker specifically so that the organization discovers and fixes the same weaknesses a real black hat would find — the defensive exercise mirrors the offensive cycle stage-for-stage, except the final step replaces "hide the evidence" with "document everything for the client."
+
+---
+
+## 3. KEY POINTS & COMPARISONS
+
+**Quick revision bullets:**
+- IPSec works at the **network layer**; TLS/HTTPS works between transport and application layers.
+- AH = integrity + authentication only (no confidentiality); ESP = confidentiality + optional integrity/authentication.
+- Transport mode protects payload only (host-to-host); Tunnel mode protects the whole original packet (gateway-to-gateway/VPN).
+- An SA is **unidirectional**; two SAs needed for bidirectional traffic; identified by SPI + destination IP + protocol.
+- IKE uses Diffie-Hellman (Phase 1) to set up a secure channel, then negotiates IPSec SAs (Phase 2).
+- Firewall default policy should always be **default-deny**.
+- DMZ uses **two firewalls** (external + internal) to sandwich public-facing servers between the Internet and the trusted LAN.
+- TCB should be kept as **small as possible**; a reference monitor must be **completely mediating, tamper-proof, and verifiable**.
+- Forensic investigation stages ≠ Incident handling phases — forensics is about *evidence*, incident handling is about *operational response*; they run in parallel during a real incident.
+- Chain of custody must be maintained from the **Preservation** stage onward for evidence to be admissible in court.
+- Footprinting is **passive** (no direct contact); Scanning is **active** (direct probing).
+- SYN scan is "half-open" (stealthier, no full handshake); Connect scan completes the full 3-way handshake (noisier, more reliable).
+- The system hacking cycle's last phase (Clearing Tracks) is what makes cybercrime forensics hard — it is the mirror-opposite of a pentest's final "Reporting" phase.
+
+### AH vs ESP
+
+| Feature | AH (Authentication Header) | ESP (Encapsulating Security Payload) |
+|---|---|---|
+| Confidentiality (encryption) | No | Yes |
+| Integrity / authentication | Yes | Yes (optional but typical) |
+| Anti-replay protection | Yes | Yes |
+| Covers outer IP header | Yes (immutable fields) | No |
+| Typical real-world usage | Rare (confidentiality usually needed too) | Very common (default choice) |
+
+### Transport Mode vs Tunnel Mode
+
+| Feature | Transport Mode | Tunnel Mode |
+|---|---|---|
+| What's protected | Payload only (original IP header unchanged) | Entire original IP packet (new outer header added) |
+| Typical use | Host-to-host, end-to-end | Gateway-to-gateway / VPN, host-to-gateway |
+| Hides original source/dest IP? | No | Yes (from outside observers) |
+| Overhead | Lower | Higher (extra IP header) |
+
+### Types of Firewalls
+
+| Type | OSI Layer | Inspects | Pros | Cons |
+|---|---|---|---|---|
+| Packet-Filtering | Network/Transport (3/4) | IP/port/protocol per packet, stateless | Fast, simple, cheap | No connection awareness, no payload inspection, spoofing-prone |
+| Stateful Inspection | Network/Transport (3/4) | Connection state table + header fields | More secure than filtering, still fast | More resource use, still blind to app payload |
+| Application-Level Gateway (Proxy) | Application (7) | Full application data/commands | Strongest security, hides internal topology | Slow, needs per-protocol proxy, less transparent |
+| Circuit-Level Gateway | Session (5) | TCP handshake legitimacy only | Fast, hides internal topology | No content inspection after session approved |
+| Next-Gen Firewall (NGFW) | Multiple (3–7) | Deep packet inspection + app-ID + IPS | Comprehensive, single-device, app-aware | Costly, complex, higher overhead |
+
+### Black Hat vs White Hat vs Grey Hat vs Suicide Hacker
+
+| Type | Authorization | Motive | Legal status |
+|---|---|---|---|
+| Black Hat | None | Personal/financial gain, malice | Illegal |
+| White Hat | Explicit, contracted | Improve security professionally | Legal |
+| Grey Hat | None (self-initiated) | Curiosity, recognition, perceived public good | Technically illegal, non-malicious intent |
+| Suicide Hacker | None | Ideology/cause; accepts being caught | Illegal, consequences knowingly accepted |
+
+### Footprinting vs Scanning vs Enumeration
+
+| Aspect | Footprinting | Scanning | Enumeration |
+|---|---|---|---|
+| Nature | Passive | Active | Active, deeper |
+| Direct contact with target? | No | Yes | Yes |
+| Goal | Build organizational/infra profile | Find live hosts/open ports/vulnerable versions | Extract detailed system info (usernames, shares, service banners, running processes) once connected |
+| Example techniques | WHOIS, DNS lookup, social media, job ads | Port scan, ping sweep, vulnerability scan | Banner grabbing, SNMP walks, null-session enumeration |
+
+### Forensic Investigation Stages vs Incident Handling Phases
+
+| Forensic Investigation (evidence-focused) | Incident Handling (response-focused) |
+|---|---|
+| Identification (find evidence sources) | Preparation (readiness before any incident) |
+| Preservation (chain of custody starts) | Identification (confirm an incident occurred) |
+| Collection (forensic imaging, hashing) | Containment (stop the spread) |
+| Examination (extract artifacts) | Eradication (remove root cause) |
+| Analysis (build the narrative/timeline) | Recovery (restore normal operations) |
+| Presentation/Reporting (legal/management report) | Lessons Learned (feed back into Preparation) |
+
+Note: Forensics is primarily about **legally sound evidence handling**, while incident handling is about **operationally stopping and recovering from** the incident — a real security event typically runs both lifecycles side by side.
+
+---
+
+## 4. NUMERICALS & FORMULAS
+
+This unit is predominantly qualitative/conceptual — there are no arithmetic formulas to memorize (no key-length computations, no probability calculations, etc., unlike Units II/III). The one "numerical-style" question examiners do ask from this unit is a **firewall ACL rule-matching walkthrough**, given below as the required worked content for this section.
+
+**Sample Firewall Rule Table (evaluated top-to-bottom, first match wins, default policy = DENY):**
+
+| Rule # | Source IP | Dest IP | Dest Port | Protocol | Action |
+|---|---|---|---|---|---|
+| 1 | Any | 192.168.1.10 | 80 | TCP | ALLOW |
+| 2 | Any | 192.168.1.10 | 443 | TCP | ALLOW |
+| 3 | 10.0.0.0/24 | 192.168.1.0/24 | Any | Any | ALLOW |
+| 4 | Any | 192.168.1.0/24 | 22 | TCP | DENY |
+| 5 | Any | Any | Any | Any | DENY (default) |
+
+**Worked Example 1:**
+*Packet:* Source = 203.0.113.5 (external), Destination = 192.168.1.10, Dest Port = 443, Protocol = TCP
+
+- Check Rule 1: Dest = 192.168.1.10 matches, but Dest Port 443 ≠ 80 → **no match**, move on.
+- Check Rule 2: Dest = 192.168.1.10 matches, Dest Port 443 = 443 matches, Protocol TCP matches → **MATCH**.
+- **Result: ALLOW.** The packet reaches the web server over HTTPS. Evaluation stops here — later rules are never consulted.
+
+**Worked Example 2:**
+*Packet:* Source = 203.0.113.5 (external), Destination = 192.168.1.20, Dest Port = 22 (SSH), Protocol = TCP
+
+- Check Rule 1: Dest 192.168.1.20 ≠ 192.168.1.10 → no match.
+- Check Rule 2: Dest 192.168.1.20 ≠ 192.168.1.10 → no match.
+- Check Rule 3: Source 203.0.113.5 is not within 10.0.0.0/24 → no match.
+- Check Rule 4: Dest 192.168.1.20 is within 192.168.1.0/24, Dest Port 22 = 22, Protocol TCP matches → **MATCH**.
+- **Result: DENY.** External SSH access to any host in the 192.168.1.0/24 subnet is explicitly blocked, so the packet is dropped, even though no rule about this exact host existed — Rule 4's subnet-wide match caught it before the default-deny rule was ever needed.
+
+*(A third contrast worth noting mentally: if the same SSH packet instead came from source 10.0.0.5, Rule 3 — Any protocol/port allowed from the internal 10.0.0.0/24 subnet — would match first and ALLOW it, since Rule 3 is checked before Rule 4. This illustrates why rule **order** matters as much as rule content.)*
+
+---
+
+## 5. PREVIOUS YEAR QUESTIONS (PYQs) & MOCK QUESTIONS
+
+**Q1. Differentiate between AH and ESP protocols in IPSec. Explain Transport mode and Tunnel mode with diagrams.**
+
+Model-answer outline:
+- Define IPSec purpose (network-layer security) in one line.
+- Table: AH (integrity+auth, no confidentiality) vs ESP (confidentiality+optional integrity).
+- Draw both packet diagrams (Transport mode: original IP header retained; Tunnel mode: new outer IP header, original packet fully encapsulated).
+- One line each on use case: Transport = end-to-end host communication; Tunnel = VPN/gateway-to-gateway.
+
+**Q2. Explain the different types of firewalls with their operation, advantages, and disadvantages. Draw a screened subnet (DMZ) architecture.**
+
+Model-answer outline:
+- Define firewall + choke point concept.
+- Cover all 5 types with the layer they operate at (packet-filter → stateful → app-gateway → circuit-level → NGFW), one pro/con each.
+- Draw DMZ diagram: Internet → External Firewall → DMZ (web/mail/DNS servers) → Internal Firewall → Internal LAN.
+- One line tying design principles: default-deny + least privilege + choke point.
+
+**Q3. What is computer forensics? Explain its need, objectives, and the stages of a forensic investigation.**
+
+Model-answer outline:
+- Define computer forensics (legally sound evidence handling from digital devices).
+- List 3–4 needs/objectives (legal evidence, root-cause, compliance, attribution).
+- Six stages in order with one line each: Identification → Preservation (chain of custody) → Collection (imaging/hashing) → Examination (extract artifacts) → Analysis (build narrative) → Presentation (report).
+- One line noting these differ from incident-handling phases (don't confuse the two lifecycles).
+
+**Q4. Describe the incident handling process / incident response lifecycle with all its phases.**
+
+Model-answer outline:
+- Define incident handling as the operational response lifecycle (distinct from forensics).
+- Six phases in order with one line each: Preparation → Identification → Containment → Eradication → Recovery → Lessons Learned.
+- Note the feedback loop: Lessons Learned feeds back into Preparation.
+- Optionally note Containment splits into short-term/long-term.
+
+**Q5. Explain the classes of hackers and describe the overview of the system hacking cycle. How does footprinting differ from scanning?**
+
+Model-answer outline:
+- Table: Black hat / White hat / Grey hat / Suicide hacker — authorization + motive for each.
+- System hacking cycle, five phases in order with one line each: Reconnaissance → Scanning → Gaining Access → Maintaining Access → Clearing Tracks.
+- Footprinting = passive info-gathering (WHOIS, DNS, social media, job postings); Scanning = active probing (port/network/vulnerability scanning) — one contrasting line.
+- Tie-back line: this cycle mirrors Unit I's pentest phases, except the final step is Reporting instead of Clearing Tracks.
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

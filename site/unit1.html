@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit I — Intrusion Detection &amp; Pentest | CNS Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-unit="unit1">
+
+<header class="topbar">
+  <span class="brand">⌗ CNS <span>FIELD MANUAL</span></span>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="unit1.html" class="active">Unit I</a>
+    <a href="unit2.html">Unit II</a>
+    <a href="unit3.html">Unit III</a>
+    <a href="unit4.html">Unit IV</a>
+    <a href="unit5.html">Unit V</a>
+    <a href="flashcards.html">Flashcards</a>
+    <a href="mindmap.html">Mind Map</a>
+    <a href="tools.html">Tools</a>
+    <a href="quiz.html">Quiz</a>
+  </nav>
+  <div class="search-wrap">
+    <input type="search" id="searchBox" placeholder="Search this unit…" aria-label="Search this unit">
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="On this page"></nav>
+  <main class="content-wrap">
+    <div class="paper" id="content"></div>
+  </main>
+</div>
+
+<script type="text/markdown" id="md-source">
+# UNIT I — Introduction to Network Security, Intrusion Detection &amp; Penetration Testing
+
+**Overall exam weightage estimate (relative to the full 5-unit course): 18%** — this unit is almost entirely conceptual (few numericals beyond risk/ALE and IDS-accuracy metrics), so it trades numerical depth for breadth of definitions, making it slightly lower-yield per study-hour than the crypto-heavy Units II/III.
+
+---
+
+## 1. TOPIC WEIGHTAGE ANALYSIS
+
+| Core Topic | Est. Weightage (within Unit I) | Tier |
+|---|---|---|
+| Security terminologies, CIA triad & principles | 15% | **Must-Study** |
+| Types of attacks (passive/active + OS/application/shrink-wrap/misconfiguration) | 20% | **Must-Study** |
+| IDS — definition, types (signature/anomaly, NIDS/HIDS) | 20% | **Must-Study** |
+| Indications of intrusion (system/file/network) | 10% | Moderate |
+| IDS tools, post-attack measures, evading IDS | 10% | Low-Yield (short notes only) |
+| System Integrity Verifiers (SIV) | 5% | Low-Yield |
+| Penetration testing — categories, types | 15% | **Must-Study** |
+| Risk management | 5% | Moderate (numerical-prone) |
+
+**Why this distribution:** Across university papers on this exact syllabus pattern (CEH-flavored IDS content grafted onto a Stallings-style security-fundamentals unit), the two questions that recur almost every year are (a) *"What is IDS? Explain its types"* and (b) *"Differentiate Vulnerability Assessment and Penetration Testing"* — both are 7–10 mark long questions. "Types of attacks" is the standard 2-mark-definition **or** 10-mark-explain-with-examples question depending on paper set. Evading-IDS and SIV appear almost exclusively as 2-mark short notes, never as full long questions — hence Low-Yield. Risk management rarely gets a full theory question but is a favorite for a small numerical (ALE) tacked onto a theory paper.
+
+---
+
+## 2. COMPREHENSIVE THEORY
+
+### 2.1 Computer Security, Network Security, Cyber Security
+
+These three terms are nested, not synonymous — examiners frequently ask you to differentiate them.
+
+- **Computer Security**: Protection of a *single* computer system's hardware, software, and stored data from unauthorized access, damage, or disruption. Scope = one machine.
+- **Network Security**: Protection of the *data in transit* and the infrastructure (routers, switches, links, protocols) that connects multiple computers. Concerned with confidentiality/integrity of communication channels.
+- **Cyber Security**: The broadest umbrella — protection of *any* internet-connected system (computers, networks, servers, mobile devices, IoT, data) from digital attacks, including legal, policy, and organizational dimensions (cyber law, incident response, forensics).
+
+```
+        ┌─────────────────────────────────────────────┐
+        │              CYBER SECURITY                  │
+        │   (policies, law, forensics, org-wide risk)  │
+        │   ┌───────────────────────────────────────┐  │
+        │   │          NETWORK SECURITY              │  │
+        │   │  (protects data-in-transit, protocols) │  │
+        │   │   ┌─────────────────────────────────┐  │  │
+        │   │   │      COMPUTER SECURITY          │  │  │
+        │   │   │ (protects a single host's CIA)  │  │  │
+        │   │   └─────────────────────────────────┘  │  │
+        │   └───────────────────────────────────────┘  │
+        └─────────────────────────────────────────────┘
+```
+
+**Why the nesting matters (exam angle):** A question like "computer security is necessary but not sufficient for network security" is a standard true/false-with-justification — a compromised single host (computer security failure) becomes the pivot point for a network-wide breach (network security failure), which in turn is part of the organization's cyber security posture.
+
+### 2.2 Security Terminologies & Principles
+
+**Core vocabulary (define precisely — examiners deduct marks for vague definitions):**
+
+- **Asset**: Anything of value to the organization (data, hardware, reputation, personnel).
+- **Vulnerability**: A weakness in a system (design flaw, misconfiguration, unpatched software) that *could* be exploited.
+- **Threat**: A potential event or actor capable of exploiting a vulnerability (e.g., a hacker, malware, natural disaster).
+- **Threat Agent/Actor**: The entity that carries out the threat (script kiddie, insider, nation-state).
+- **Exploit**: The specific piece of code/technique used to take advantage of a vulnerability.
+- **Attack**: The actual act of exploiting a vulnerability using an exploit.
+- **Risk**: The probability of a threat exploiting a vulnerability, combined with the resulting impact. `Risk = f(Threat, Vulnerability, Impact)`.
+- **Countermeasure/Control**: A safeguard that reduces risk (patch, firewall rule, policy).
+
+**Causal chain (draw this in the exam):**
+
+```
+ Asset ---has---> Vulnerability <---exploited by--- Threat (via Threat Agent using an Exploit)
+   |                                                        |
+   +----------------------> generates RISK <----------------+
+                                  |
+                          reduced by CONTROL
+```
+
+**Security Principles — the CIA Triad (extended to CIAAAN in modern syllabi):**
+
+1. **Confidentiality** — information disclosed only to authorized entities. Achieved via encryption, access control.
+2. **Integrity** — information is not altered in an unauthorized manner. Achieved via hashing, digital signatures, checksums.
+3. **Availability** — systems/data accessible when needed. Threatened by DoS; achieved via redundancy, backups.
+4. **Authentication** — verifying identity of a user/system ("are you who you claim to be?").
+5. **Authorization** — verifying that an authenticated entity has permission for the requested action.
+6. **Non-repudiation** — a sender cannot deny having sent a message (achieved via digital signatures). Critical for legal/financial transactions.
+7. **Accountability** — actions of an entity can be traced uniquely to that entity (via logging/auditing).
+
+**Why each exists:** CIA alone doesn't stop a legitimate user from *denying* an action they took (that's what non-repudiation fixes), and it doesn't stop a properly-authenticated user from doing something they aren't *permitted* to do (that's what authorization fixes). Examiners test this by giving a scenario and asking "which principle is violated?"
+
+### 2.3 Types of Attacks
+
+**(A) Classification by behavior (Stallings' classic model) — passive vs active:**
+
+- **Passive Attacks**: Attacker only *observes/monitors* traffic; does not alter data. Goal = obtain information. Hard to detect (no data alteration) but *preventable* via encryption.
+  - Eavesdropping / Release of message contents
+  - Traffic analysis (inferring patterns from encrypted traffic — frequency, length, source/destination — even without reading content)
+- **Active Attacks**: Attacker *modifies* data stream or creates a false stream. Easy to detect but hard to prevent entirely.
+  - **Masquerade**: one entity pretends to be another (e.g., stolen credentials).
+  - **Replay**: capturing data and retransmitting it later to produce unauthorized effect.
+  - **Modification of messages**: altering part of a legitimate message.
+  - **Denial of Service (DoS)**: preventing normal use of a service.
+
+**(B) Classification by target (syllabus-specific — this is the CEH-style classification, distinct from (A) and frequently confused by students; keep both straight for exams):**
+
+| Attack Type | Mechanism | Example |
+|---|---|---|
+| **Operating System attacks** | Exploiting flaws/default settings in the OS itself | Buffer overflow in an unpatched Windows/Linux kernel service, exploiting default admin accounts |
+| **Application-level attacks** | Exploiting poor coding practices in software running atop the OS | SQL Injection, Cross-Site Scripting (XSS), buffer overflow in a custom web app |
+| **Shrink-wrap code attacks** | Exploiting default/sample scripts, libraries, or unmodified code shipped with off-the-shelf software | Attacker uses a known exploit against the default macro/sample script bundled with commercial software that admins never customized or removed |
+| **Misconfiguration attacks** | Exploiting systems left in an insecure default/incorrect configuration | Open S3 bucket, default password unchanged, unnecessary open ports, directory listing enabled on a web server |
+
+**Why this classification exists (exam "why"):** It maps to the *layer* at which the security failure occurs — OS layer, application layer, third-party/vendor code layer, and administrative/human layer respectively. A pentest report structures its findings using exactly this taxonomy, which is why examiners like it — it directly feeds into penetration testing (§2.6).
+
+### 2.4 Intrusion Detection
+
+**Terminologies (define crisply):**
+
+- **Intrusion**: An unauthorized attempt/act to access, damage, or disrupt a system.
+- **Alert/Alarm**: A signal generated by the IDS indicating a possible intrusion.
+- **True Positive**: Real attack, correctly flagged.
+- **False Positive**: Benign event, incorrectly flagged as attack (the #1 IDS pain point — analyst fatigue).
+- **True Negative**: Benign event, correctly ignored.
+- **False Negative**: Real attack, missed entirely (the most dangerous IDS failure).
+- **Site Policy**: Guidelines within an organization that control security rules.
+- **Confidence Value**: Measures an IDS's ability to correctly detect an attack from repeated data.
+- **Attack Signature**: A pre-defined, known pattern of an attack used for matching.
+
+**IDS Architecture:**
+
+```
+ Network/Host Traffic
+        │
+        ▼
+ ┌───────────────┐      ┌──────────────────────┐
+ │   SENSOR /     │─────▶│   ANALYSIS ENGINE     │
+ │  DATA COLLECTOR│      │ (matches vs signature │
+ └───────────────┘      │  DB or behavior model) │
+                         └──────────┬───────────┘
+                                    │
+                     ┌──────────────┴───────────────┐
+                     ▼                               ▼
+             ┌──────────────┐               ┌────────────────┐
+             │ Signature/    │               │ Alert / Log /   │
+             │ Knowledge Base│               │ Response Module │
+             └──────────────┘               └────────────────┘
+```
+
+**Types of IDS:**
+
+1. **By detection methodology:**
+   - **Signature-based (Misuse Detection)**: Matches traffic against a database of *known* attack patterns. Fast, low false-positive rate, but **cannot detect zero-day/novel attacks** (no matching signature exists yet).
+   - **Anomaly-based (Statistical/Behavioral Detection)**: Builds a baseline of "normal" behavior, flags deviations. **Can catch zero-day attacks**, but has a **higher false-positive rate** (any unusual-but-legitimate behavior gets flagged).
+2. **By deployment/data source:**
+   - **Network-based IDS (NIDS)**: Monitors traffic on a network segment (e.g., placed at a chokepoint/span port). Sees traffic across many hosts but is blind to encrypted or host-internal activity. Example: Snort.
+   - **Host-based IDS (HIDS)**: Runs as an agent on an individual host, monitors system calls, file changes, logs. Can detect what NIDS can't (insider misuse, encrypted-traffic-decoded-at-host activity) but only protects the host it's on. Example: OSSEC, Tripwire.
+   - **Hybrid IDS**: Combines both for layered visibility.
+3. **By response behavior:**
+   - **Passive IDS**: Only detects and alerts.
+   - **Reactive IDS (a.k.a. Intrusion Prevention System, IPS)**: Detects *and* actively blocks (e.g., resets connection, updates firewall rule).
+
+**System Integrity Verifiers (SIV):** A tool (e.g., Tripwire) that takes a cryptographic hash (checksum baseline) of critical system files/registry keys at a known-good state, then periodically re-hashes and compares. Any mismatch indicates unauthorized modification (e.g., a rootkit replacing a system binary). Essentially a specialized, file-integrity-focused HIDS component.
+
+### 2.5 Indications of Intrusion
+
+- **System Indications**: unexplained system reboots/crashes, new/unknown user accounts, unexpected changes to system time, degraded performance, processes consuming unusual CPU/memory, disabled antivirus/logging services.
+- **File System Indications**: new, missing, or modified files without authorization; changed file permissions/ownership; unusually large files (data staged for exfiltration); hidden files/directories; unexpected changes in file sizes of system binaries (a classic SIV trigger).
+- **Network Indications**: repeated failed login attempts, traffic to/from unfamiliar IP addresses or unusual ports, sudden spikes in bandwidth usage, presence of port-scanning patterns (sequential port hits from one source), unusual protocol behavior (e.g., DNS traffic carrying abnormal payload sizes — tunneling).
+
+### 2.6 IDS Tools, Post-Attack Measures & Evading IDS
+
+**Tools**: Snort (signature-based NIDS, rule-driven, open-source, industry standard for teaching), Suricata (multithreaded NIDS/IPS), OSSEC (open-source HIDS), Tripwire (SIV).
+
+**Post-attack IDS measures**: preserve logs/evidence (chain of custody, ties into computer forensics — Unit V), isolate affected system, update signatures/rules to detect the now-known attack in future, patch the exploited vulnerability, conduct root-cause/forensic analysis, report to stakeholders.
+
+**Evading IDS — techniques (favorite 2-mark short-note list):**
+- **Fragmentation**: splitting an attack payload across multiple packets so no single packet matches a signature.
+- **Encryption/Tunneling**: hiding malicious payload inside an encrypted or tunneled protocol the IDS cannot inspect.
+- **Flooding**: overwhelming the IDS itself with noise so it drops packets or the analyst is buried in false alerts, letting the real attack slip through.
+- **Obfuscation**: encoding payloads (e.g., Unicode encoding in a URL) so pattern matching fails.
+- **Session Splicing**: splitting attack data across many small packets/sessions over an extended time window to defeat time-windowed signature matching.
+
+### 2.7 Penetration Testing
+
+**Penetration Testing (Pentest)**: An *authorized*, simulated cyberattack against a system to actively **exploit** discovered weaknesses and evaluate real-world impact — goes beyond just finding flaws.
+
+**Categories of Security Assessment (broadest to narrowest):**
+1. **Security Audit**: Checks compliance against a standard/checklist (policy-driven, not technical exploitation).
+2. **Vulnerability Assessment (VA)**: Systematically *identifies and ranks* vulnerabilities (via scanners), but does **not** exploit them.
+3. **Penetration Testing (PT)**: *Actively exploits* identified vulnerabilities to prove real impact and depth of compromise.
+4. **Risk Assessment**: Evaluates likelihood and business impact of identified risks, often the output that feeds Risk Management (§2.8).
+
+**Types of Penetration Testing:**
+- **By knowledge given to tester:**
+  - **Black-box**: Tester has *zero* prior knowledge of the target (simulates external attacker) — most realistic, most time-consuming.
+  - **White-box**: Tester has *full* knowledge (source code, network diagrams, credentials) — fastest, most thorough coverage.
+  - **Grey-box**: Tester has *partial* knowledge (e.g., a normal user account) — simulates an insider or a partially-compromised attacker.
+- **By origin:**
+  - **External Pentest**: Simulates an attack from outside the organization's network (internet-facing).
+  - **Internal Pentest**: Simulates an attacker who already has network access (malicious insider or post-breach lateral movement).
+- **By target awareness:**
+  - **Announced**: IT staff know the test is happening (tests defenses only).
+  - **Unannounced**: IT staff unaware (also tests detection/response capability, i.e., the SOC/IDS team).
+
+**Standard Pentest Phases** (ties directly into Unit V's "System Hacking Cycle"):
+Pre-engagement/Planning → Reconnaissance → Scanning/Enumeration → Gaining Access (Exploitation) → Maintaining Access → Covering Tracks → Reporting.
+
+### 2.8 Risk Management
+
+**Risk Management Process:**
+1. **Asset Identification** — what needs protecting.
+2. **Threat & Vulnerability Identification** — what can go wrong.
+3. **Risk Assessment** — qualitative (High/Medium/Low matrix) or quantitative (dollar-value, see formulas below).
+4. **Risk Treatment** — four standard options:
+   - **Avoid** (eliminate the activity causing risk)
+   - **Mitigate** (apply controls to reduce likelihood/impact)
+   - **Transfer** (insurance, outsourcing/SLA)
+   - **Accept** (informed decision to bear residual risk, when cost of control > cost of risk)
+5. **Monitor & Review** — continuous reassessment as environment changes.
+
+**Why quantitative risk matters:** Management allocates security budget based on dollar-value comparisons — this is the bridge between technical security work and business decision-making, which is exactly why ALE-type numericals appear in exams (§4).
+
+---
+
+## 3. KEY POINTS & COMPARISONS
+
+**Quick-fire facts:**
+- CIA Triad = Confidentiality, Integrity, Availability — the foundation of *every* security control ever designed.
+- Passive attacks → hard to detect, easy to prevent (encryption). Active attacks → easy to detect, hard to prevent completely.
+- Signature-based IDS = fast + low FP rate, but blind to zero-days. Anomaly-based IDS = catches zero-days, but higher FP rate.
+- False Negative (missed real attack) is more dangerous than False Positive (false alarm) — FN = breach goes unnoticed.
+- VA finds/ranks flaws; PT exploits them to prove impact. **PT is a superset of VA in effort, not a replacement.**
+- Non-repudiation ≠ Authentication: authentication proves identity *now*; non-repudiation prevents *later denial* of an action already taken.
+- SIV = integrity-checking tool (hash-baseline comparison); conceptually a narrow, specialized HIDS.
+
+**Comparative Table: Passive vs Active Attacks**
+
+| Aspect | Passive Attack | Active Attack |
+|---|---|---|
+| Data alteration | No | Yes |
+| Detectability | Difficult | Easy |
+| Preventability | Easy (encryption) | Difficult |
+| Examples | Eavesdropping, traffic analysis | Masquerade, replay, modification, DoS |
+| Primary goal | Information gathering | Disruption/deception |
+
+**Comparative Table: Signature-based vs Anomaly-based IDS**
+
+| Aspect | Signature-based | Anomaly-based |
+|---|---|---|
+| Detection basis | Known attack patterns | Deviation from baseline "normal" |
+| Zero-day detection | No | Yes |
+| False positive rate | Low | High |
+| Maintenance | Frequent signature updates needed | Requires accurate baseline tuning |
+
+**Comparative Table: NIDS vs HIDS**
+
+| Aspect | NIDS | HIDS |
+|---|---|---|
+| Placement | Network segment/chokepoint | Individual host |
+| Visibility | Traffic across many hosts | Deep host internals (files, syscalls) |
+| Encrypted traffic | Blind to it | Sees decrypted host-side activity |
+| Example | Snort | OSSEC, Tripwire |
+
+**Comparative Table: Vulnerability Assessment vs Penetration Testing**
+
+| Aspect | Vulnerability Assessment | Penetration Testing |
+|---|---|---|
+| Action | Identify & rank flaws | Identify & **exploit** flaws |
+| Depth | Breadth-first, automated scan-heavy | Depth-first, manual + automated |
+| Output | List of vulnerabilities with severity | Proof-of-concept impact + exploited paths |
+| Frequency | Frequent (e.g., monthly scans) | Less frequent (e.g., annual/major release) |
+| Cost/Time | Lower | Higher |
+
+**Comparative Table: Black-box vs White-box vs Grey-box Testing**
+
+| Aspect | Black-box | Grey-box | White-box |
+|---|---|---|---|
+| Tester's knowledge | None | Partial (e.g., user creds) | Full (source, architecture) |
+| Simulates | External attacker | Insider/partial compromise | Thorough internal audit |
+| Time required | Highest | Medium | Lowest |
+| Coverage | Realistic but may miss deep flaws | Balanced | Most exhaustive |
+
+---
+
+## 4. NUMERICALS & FORMULAS
+
+### Formulas
+
+**Risk Management (quantitative):**
+- `SLE (Single Loss Expectancy) = Asset Value (AV) × Exposure Factor (EF)`
+  - EF = percentage of asset value lost in a single incident (0 to 1).
+- `ARO (Annualized Rate of Occurrence)` = expected number of times the incident occurs per year.
+- `ALE (Annualized Loss Expectancy) = SLE × ARO`
+- Decision rule: If `Cost of Control (annual) < ALE`, the control is financially justified.
+
+**IDS Detection Accuracy (confusion-matrix based):**
+- `Detection Rate (Recall/TPR) = TP / (TP + FN)`
+- `False Positive Rate (FPR) = FP / (FP + TN)`
+- `Precision = TP / (TP + FP)`
+- `Accuracy = (TP + TN) / (TP + TN + FP + FN)`
+
+### Solved Numerical 1 — ALE (Risk Management)
+
+**Problem:** A company's database server is valued at ₹20,00,000. A ransomware attack is estimated to destroy 40% of its value per incident. Historically, such incidents occur once every 4 years. An antivirus/backup solution costing ₹1,00,000/year is proposed. Should it be adopted?
+
+**Step 1 — Compute SLE:**
+`SLE = AV × EF = 20,00,000 × 0.40 = ₹8,00,000`
+
+**Step 2 — Compute ARO:**
+Occurs once every 4 years → `ARO = 1/4 = 0.25`
+
+**Step 3 — Compute ALE:**
+`ALE = SLE × ARO = 8,00,000 × 0.25 = ₹2,00,000` per year
+
+**Step 4 — Decision:**
+Cost of control (₹1,00,000/year) < ALE (₹2,00,000/year) → **Adopt the control.** It saves an expected ₹1,00,000/year.
+
+### Solved Numerical 2 — IDS Detection Metrics
+
+**Problem:** An IDS is tested on 1000 network events. It correctly flags 180 real attacks (TP), misses 20 real attacks (FN), correctly ignores 750 benign events (TN), and wrongly flags 50 benign events as attacks (FP). Compute Detection Rate, FPR, Precision, and Accuracy.
+
+**Step 1 — Detection Rate (Recall):**
+`TPR = TP/(TP+FN) = 180/(180+20) = 180/200 = 0.90 → 90%`
+
+**Step 2 — False Positive Rate:**
+`FPR = FP/(FP+TN) = 50/(50+750) = 50/800 = 0.0625 → 6.25%`
+
+**Step 3 — Precision:**
+`Precision = TP/(TP+FP) = 180/(180+50) = 180/230 ≈ 0.7826 → 78.26%`
+
+**Step 4 — Accuracy:**
+`Accuracy = (TP+TN)/Total = (180+750)/1000 = 930/1000 = 0.93 → 93%`
+
+**Interpretation (write this in the exam for full marks):** High detection rate (90%) is good, but 6.25% FPR means the IDS still generates a non-trivial number of false alarms, and the 20 missed attacks (FN) represent the real security exposure — this is exactly why anomaly-based IDS tuning is a continuous process.
+
+---
+
+## 5. PREVIOUS YEAR QUESTIONS (PYQs) & MOCK QUESTIONS
+
+**Q1. What is an Intrusion Detection System? Explain its types in detail. (10 marks — very high frequency)**
+
+Model-answer outline:
+- Define IDS → draw the architecture diagram (§2.4) → classify by detection method (signature vs anomaly, with the comparison table) → classify by deployment (NIDS vs HIDS, with table) → mention IPS as the reactive variant → 1-line example tool for each type. Diagrams + tables earn examiner goodwill and step marks even if prose is brief.
+
+**Q2. Differentiate between Vulnerability Assessment and Penetration Testing. (5–7 marks — very high frequency)**
+
+Model-answer outline:
+- One-line definition of each → present the comparison table (§3) directly → close with one sentence: "VA answers *what* is wrong; PT answers *what happens if it's exploited*."
+
+**Q3. Explain the different types of attacks based on the target of exploitation, with examples. (10 marks)**
+
+Model-answer outline:
+- State the four categories (OS/Application/Shrink-wrap/Misconfiguration) → one paragraph each with a concrete example (§2.3B) → optionally also mention the passive/active classification (§2.3A) to show breadth, but keep target-based classification as the main answer since that's what's explicitly named in the syllabus.
+
+**Q4. What is Risk Management? Explain its process. A server worth ₹X with EF=Y% suffers incidents ARO=Z times/year — calculate ALE. (7–10 marks, theory + numerical combo)**
+
+Model-answer outline:
+- Define risk management → list the 5-step process (§2.8) → list the 4 treatment options (avoid/mitigate/transfer/accept) → solve the attached numerical showing all 3 formula steps explicitly (examiners give partial marks per correct step even if final answer is wrong).
+
+**Q5. Explain the categories of security assessment and types of penetration testing. (10 marks)**
+
+Model-answer outline:
+- Draw the nested hierarchy: Security Audit ⊃ VA ⊃ PT ⊃ Risk Assessment (briefly justify why each is more specific) → then explain PT sub-types: black/white/grey-box (table from §3), external/internal, announced/unannounced.
+
+**Q6 (short notes, 2 marks each — pick any that appear). Write short notes on: (a) System Integrity Verifiers (b) Evading IDS techniques (c) Indications of intrusion.**
+
+Model-answer outline:
+- One-line definition + a 3-bullet list, no more — these are explicitly Low-Yield, don't over-invest study time relative to their mark value.
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcards | CNS Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand">⌗ CNS <span>FIELD MANUAL</span></span>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="unit1.html">Unit I</a>
+    <a href="unit2.html">Unit II</a>
+    <a href="unit3.html">Unit III</a>
+    <a href="unit4.html">Unit IV</a>
+    <a href="unit5.html">Unit V</a>
+    <a href="flashcards.html" class="active">Flashcards</a>
+    <a href="mindmap.html">Mind Map</a>
+    <a href="tools.html">Tools</a>
+    <a href="quiz.html">Quiz</a>
+  </nav>
+</header>
+
+<div class="tool-wrap">
+  <h1>Flashcards</h1>
+  <p class="tool-lede">50 index cards, 10 per unit. Read the front, try to recall it cold, then flip — mark "Again" if you missed it, "Got it" if you didn't. Two clean "Got it"s in a row marks a card mastered.</p>
+
+  <div class="flash-stats">
+    <div class="stat"><b id="statTotal">0</b><span>Total</span></div>
+    <div class="stat"><b id="statReviewed">0</b><span>Reviewed</span></div>
+    <div class="stat"><b id="statMastered">0</b><span>Mastered</span></div>
+  </div>
+
+  <div class="flash-filters">
+    <button data-unit="all" class="active">All Units</button>
+    <button data-unit="1">Unit I</button>
+    <button data-unit="2">Unit II</button>
+    <button data-unit="3">Unit III</button>
+    <button data-unit="4">Unit IV</button>
+    <button data-unit="5">Unit V</button>
+  </div>
+
+  <div class="flash-scene">
+    <div class="flash-card" id="flashCard" role="button" tabindex="0" aria-label="Flashcard. Click or press Enter to flip.">
+      <div class="flash-face flash-front">
+        <span class="flash-eyebrow" id="flashEyebrow">Loading…</span>
+        <p class="flash-text" id="flashFront"></p>
+        <span class="flash-hint">🔄 Click to reveal answer</span>
+      </div>
+      <div class="flash-face flash-back">
+        <span class="flash-eyebrow">Answer</span>
+        <p class="flash-text" id="flashBack"></p>
+        <span class="flash-hint">🔄 Click to flip back</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flash-controls">
+    <button class="flash-btn" id="flashPrev">← Prev</button>
+    <div class="side-btns">
+      <button class="flash-btn again" id="flashAgain">✗ Again</button>
+      <button class="flash-btn good" id="flashGood">✓ Got it</button>
+    </div>
+    <button class="flash-btn" id="flashNext">Next →</button>
+  </div>
+  <p class="flash-progress" id="flashProgress"></p>
+</div>
+
+<script src="flashcards.js"></script>
+</body>
+</html>

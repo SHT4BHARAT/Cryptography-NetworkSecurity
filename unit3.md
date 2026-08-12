@@ -1,0 +1,567 @@
+# UNIT III — Hash Functions, Message Authentication, Kerberos, SSL/SSH, and Digital Signatures
+
+**Overall exam weightage estimate (relative to the full 5-unit course): 22%** — this unit packs the densest numerical content in the course (RSA/ElGamal/ECDSA signature math, birthday-paradox arithmetic) on top of two heavyweight theory blocks (Kerberos, SSL/TLS handshake), so it consistently draws more marks than Units I and IV.
+
+---
+
+## 1. TOPIC WEIGHTAGE ANALYSIS
+
+| # | Topic | Internal Weightage % | Tier | Why |
+|---|-------|----------------------|------|-----|
+| 1 | Hash functions & properties (pre-image, 2nd pre-image, collision resistance) | 10% | **Must-Study** | Foundational definitions asked almost every year; feeds directly into MAC, DS, and birthday-paradox numericals |
+| 2 | SHA family (SHA-1, SHA-256 structure) | 8% | **Must-Study** | Standard "explain SHA" or "SHA-1 vs SHA-256" question |
+| 3 | MD5 (structure + why broken) | 7% | **Must-Study** | Classic "why is MD5 insecure" theory question, easy marks if properties memorized |
+| 4 | MAC vs Hash vs Digital Signature | 8% | **Must-Study** | Extremely high-frequency "differentiate" question, table-based answer scores fast |
+| 5 | Authentication requirements & functions | 5% | Low-Yield | Asked occasionally as a definition/list question, rarely as a full numerical |
+| 6 | Kerberos (AS/TGS/client/server flow) | 12% | **Must-Study** | Longest theory question in the unit (8–10 marks), diagram-based, appears almost every paper |
+| 7 | SSL/TLS (handshake, record protocol, cipher suites) | 10% | **Must-Study** | Frequently paired with SSH for a comparison question; diagram scores well |
+| 8 | SSH | 5% | Low-Yield | Usually a short 2–4 mark sub-question or comparison row with SSL |
+| 9 | Disk Encryption | 3% | Low-Yield | Conceptual 2-mark question at most |
+| 10 | Government Access to Keys (GAK) | 2% | Low-Yield | Rare, usually a 2-mark "define key escrow" question |
+| 11 | Digital Signature fundamentals (components, method, DSS, RSA-based signature + numerical) | 15% | **Must-Study** | Highest single-topic weight — theory AND the most common numerical in the whole unit |
+| 12 | ECDSA | 6% | **Must-Study** | Frequently asked as "why ECC over RSA for signatures," occasionally a short numerical |
+| 13 | ElGamal signature scheme | 6% | **Must-Study** | Second most common numerical after RSA signatures |
+| 14 | Digital Certificates / X.509 / CA / chain of trust | 3% | Low-Yield | Usually a diagram-recall question worth few marks |
+
+**Why this distribution:** Examiners treat Kerberos and Digital Signatures (RSA/ElGamal/ECDSA) as the "anchor" questions of Unit III because they are the only topics rich enough to justify a full 8–10 mark question with a diagram or a numerical. Hash properties and the MAC/Hash/DS comparison are the cheapest high-yield marks since they are pure recall. SSH, disk encryption, and GAK are included for syllabus completeness but rarely carry more than 2–3 marks — study them for definitions only, do not over-invest time there.
+
+---
+
+## 2. COMPREHENSIVE THEORY
+
+### 2.1 Hash Functions
+
+A **cryptographic hash function** `H` takes an input (message) `M` of **arbitrary length** and produces a fixed-size output called a **hash value / message digest / digest** `h = H(M)`. It is a many-to-one, deterministic, public function (no secret key involved).
+
+```
+   Arbitrary-length input M (1 byte ... many GB)
+                    |
+                    v
+        +-----------------------+
+        |   Hash Function H()   |
+        +-----------------------+
+                    |
+                    v
+        Fixed-length digest h = H(M)
+        (e.g., 128 bits for MD5,
+         160 bits for SHA-1,
+         256 bits for SHA-256)
+```
+
+**Required properties:**
+
+1. **Pre-image resistance (one-way property):** Given a digest `h`, it should be computationally infeasible to find any `M` such that `H(M) = h`. This is what makes hashing "one-way" — you cannot invert the digest back to the message. Critical for storing password hashes.
+2. **Second pre-image resistance (weak collision resistance):** Given `M1`, it should be infeasible to find a different `M2 ≠ M1` such that `H(M1) = H(M2)`. Prevents an attacker from substituting a different message that hashes the same as a known, legitimate one.
+3. **Collision resistance (strong collision resistance):** It should be infeasible to find **any two** distinct inputs `M1 ≠ M2` such that `H(M1) = H(M2)` — the attacker is free to choose both messages. This is the hardest property to satisfy and is governed by the **birthday paradox** (Section 4).
+
+**Why hash functions matter:**
+- Integrity checking of files/messages/software downloads.
+- Building block for **MACs**, **digital signatures**, and **password storage** (never store plaintext passwords — store `H(password || salt)`).
+- Used inside protocols: TLS, SSH, Kerberos, blockchain (proof-of-work), digital certificates.
+
+### 2.2 SHA (Secure Hash Algorithm) Family
+
+SHA is a family of hash functions designed by NIST/NSA, published as FIPS 180. Both SHA-1 and SHA-2 use the **Merkle–Damgård construction**:
+
+```
+IV (initial chaining value CV0)
+   |
+   v
++-------+   +-------+   +-------+         +-------+
+| Block | → | Block | → | Block | → ... → | Block |
+|  B1   |   |  B2   |   |  B3   |         |  Bn   |
++---+---+   +---+---+   +---+---+         +---+---+
+    |           |           |                 |
+    v           v           v                 v
+  f(CV0,B1)  f(CV1,B2)  f(CV2,B3)  ...   f(CVn-1,Bn)
+    =CV1        =CV2        =CV3             =CVn (= digest)
+```
+
+The message is first **padded** (a `1` bit, then zeros, then a 64-bit length field) so its total length is an exact multiple of the block size (512 bits for SHA-1/SHA-256). Each 512-bit block is expanded into a **message schedule** (80 words for SHA-1, 64 words for SHA-256) and fed through a **compression function** that runs many rounds of bitwise logical operations (`AND`, `OR`, `XOR`, rotate, modular addition) mixing the block into the running chaining value. The final chaining value is the digest.
+
+- **SHA-1:** 160-bit digest, 80 rounds, uses functions like `Ch`, `Parity`, `Maj` over five 32-bit registers (A–E). **Broken in practice** — Google/CWI's "SHAttered" attack (2017) produced a real chosen-prefix collision; SHA-1 is deprecated for TLS certificates and digital signatures.
+- **SHA-256 (part of SHA-2 family):** 256-bit digest, 64 rounds, eight 32-bit registers (A–H), uses `Ch`, `Maj`, `Σ0`, `Σ1`, `σ0`, `σ1` functions. No practical collision found; current industry standard (used in TLS 1.3, Bitcoin, code signing).
+- SHA-2 also includes SHA-224, SHA-384, SHA-512 (same design, different word sizes/output lengths). **SHA-3** (Keccak) is a structurally different sponge-based design adopted as a backup standard in case SHA-2 is ever broken.
+
+### 2.3 MD5 (Message Digest 5)
+
+MD5 (Rivest, 1992) also follows Merkle–Damgård: it pads the message, processes it in 512-bit blocks, and produces a **128-bit digest** through **four rounds of 16 operations each (64 operations total)**, using four nonlinear functions `F, G, H, I` and four 32-bit registers (A, B, C, D) initialized to fixed constants.
+
+**Why MD5 is now considered broken:**
+- Its short 128-bit output gives only 64-bit collision resistance (birthday bound), far below modern requirements.
+- Wang et al. (2004) found practical **differential cryptanalysis** techniques that produce full collisions in seconds on ordinary hardware.
+- **Chosen-prefix collisions** were later demonstrated (attacker can pick two *meaningfully different* documents/certificates that collide), famously exploited by the **Flame malware (2012)** to forge a Microsoft code-signing certificate.
+- Contrast with SHA-256: no collision has ever been found for SHA-256; its 256-bit output and more complex round function give it a much larger security margin. **MD5 should never be used for security purposes today** (only acceptable for non-adversarial checksums like accidental corruption detection).
+
+### 2.4 MAC, Hash, and Digital Signature — Precise Distinction
+
+- **Plain hash `H(M)`:** No secret key. Anyone can compute it. Provides only *accidental* integrity checking if the digest itself is transmitted over a trusted/authenticated channel — it gives **no authentication**, because an attacker who modifies `M` can simply recompute a matching `H(M')` and nobody would notice.
+- **Message Authentication Code (MAC), e.g., HMAC:** `MAC = C(K, M)` — computed using the message **plus a secret key `K` shared** between sender and receiver. Only someone possessing `K` could have generated a valid MAC, so it provides both **integrity and data-origin authentication**. It does **not** provide non-repudiation, because *both* the sender and the receiver possess the same secret key `K` — either party could have produced the MAC, so the receiver cannot prove to a third party which one actually sent it.
+- **Digital Signature:** Uses **asymmetric** keys — the sender signs with their **private key** (known only to them), and anyone can verify using the sender's **public key**. This provides integrity, authentication, **and non-repudiation**, because only the private-key holder could have produced a valid signature; the sender cannot later deny having signed the message.
+
+### 2.5 Authentication Requirements & Authentication Functions
+
+**Requirements** — a secure message authentication scheme must defend against:
+- **Disclosure:** release of message contents to unauthorized parties.
+- **Traffic analysis:** discovery of communication patterns even if content is hidden.
+- **Masquerade:** insertion of messages from a fraudulent source.
+- **Content modification:** insertion, deletion, transposition, modification of message content.
+- **Sequence modification:** insertion, deletion, or reordering of a sequence of messages.
+- **Timing modification:** delay or replay of messages.
+- **Source repudiation:** denial of message transmission by the source.
+- **Destination repudiation:** denial of message receipt by the destination.
+
+**Authentication functions** (the underlying mechanism used to produce the authenticator) — three broad approaches:
+1. **Message encryption:** the ciphertext itself serves as the authenticator (conventional encryption: only someone with the shared key could have produced meaningful ciphertext; public-key encryption with the sender's private key gives authentication + confidentiality if further encrypted with receiver's public key).
+2. **Message Authentication Code (MAC):** a keyed function producing a fixed-size authenticator appended to the message; receiver recomputes and compares.
+3. **Hash function:** used *in combination* with another security mechanism (e.g., encrypt the hash, or use a keyed-hash construction like HMAC) since a bare hash alone provides no authentication.
+
+### 2.6 Kerberos
+
+**Kerberos** is a network authentication protocol (MIT, based on Needham–Schroeder) that lets clients prove their identity to servers (and vice-versa) over an insecure network **without transmitting passwords**, using a trusted third party called the **Key Distribution Center (KDC)**, split into an **Authentication Server (AS)** and a **Ticket Granting Server (TGS)**.
+
+```
+Client (C)         Authentication Server (AS)      Ticket Granting Server (TGS)     Application Server (V)
+   |                          |                              |                             |
+   |--(1) ID_C, ID_tgs------->|                              |                             |
+   |                          |                              |                             |
+   |<-(2) E(K_c, [K_c,tgs]) --|                              |                             |
+   |     + TGT = E(K_tgs,[K_c,tgs || ID_C || AD_C || Lifetime1])                            |
+   |                          |                              |                             |
+   |--(3) ID_V, TGT, Authenticator1 = E(K_c,tgs,[ID_C||AD_C||TS1]) ------------------------>|
+   |                          |                                                             |
+   |<-(4) E(K_c,tgs,[K_c,v || Ticket_V]) --------------------------------------------------|
+   |     Ticket_V = E(K_v,[K_c,v || ID_C || AD_C || ID_V || Lifetime2])                     |
+   |                          |                                                             |
+   |--(5) Ticket_V, Authenticator2 = E(K_c,v,[ID_C||AD_C||TS2]) --------------------------------------------------------->|
+   |                          |                                                             |
+   |<-(6) E(K_c,v, [TS2 + 1])  (optional mutual authentication) ------------------------------------------------------- |
+```
+
+**Flow explanation:**
+1. **AS Exchange:** Client sends its ID and the ID of the TGS it wants a ticket for, in the clear (no password sent!).
+2. AS looks up the client's long-term key `K_c` (derived from the user's password, never transmitted) and returns: (a) a **session key `K_c,tgs`** encrypted under `K_c` — only the real user can decrypt it, and (b) a **Ticket-Granting Ticket (TGT)** encrypted under the TGS's own secret key `K_tgs` (the client cannot read this — it just relays it).
+3. **TGS Exchange:** Client sends the TGT plus a freshly built **authenticator** (client ID + timestamp, encrypted with `K_c,tgs`) to request a ticket for the actual application server `V`.
+4. TGS decrypts the TGT (proving it issued it), checks the authenticator's timestamp is fresh (anti-replay), then issues a **service ticket `Ticket_V`** (encrypted under `V`'s secret key) plus a new session key `K_c,v`, encrypted under `K_c,tgs`.
+5. **Client/Server Exchange:** Client presents `Ticket_V` and a new authenticator to server `V`.
+6. Optionally, `V` proves it decrypted correctly by returning `TS2+1` encrypted with the session key — **mutual authentication**.
+
+**Why it prevents replay/eavesdropping:**
+- Passwords never cross the network — only keys derived from them, and only to encrypt short-lived session keys.
+- **Timestamps + lifetimes** in tickets/authenticators mean a captured authenticator or ticket becomes useless after it expires; replaying an old authenticator is rejected because its timestamp is stale.
+- Tickets are encrypted with the target server's own long-term key, so only the correct server can read the session key inside.
+
+**Limitations:**
+- **Time-synchronization dependency:** all parties must have loosely synchronized clocks (usually within a few minutes) since freshness checks rely on timestamps; clock drift causes authentication failures.
+- **KDC is a single point of failure and single point of attack:** if the KDC is compromised, the entire realm's security collapses (attacker gets every user's keys); if the KDC is down, no one can authenticate.
+- Vulnerable to **offline password-guessing attacks** on the initial AS reply if users choose weak passwords.
+- Requires every client and server to be pre-registered with the KDC — scaling across organizational boundaries needs **cross-realm authentication**, adding complexity.
+
+### 2.7 SSL (Secure Sockets Layer) / TLS
+
+SSL (and its successor **TLS**) sits between the transport layer (TCP) and the application layer, providing confidentiality, integrity, and authentication for any application protocol (commonly HTTPS).
+
+**Handshake Protocol** (establishes shared secrets and negotiates parameters):
+
+```
+Client                                                    Server
+  |------------------ ClientHello -------------------------->|
+  |   (SSL/TLS version, client_random, supported cipher suites,
+  |    supported compression methods)                        |
+  |                                                            |
+  |<----------------- ServerHello -----------------------------|
+  |   (chosen version, server_random, chosen cipher suite)      |
+  |<----------------- Certificate ------------------------------|
+  |<----------------- ServerKeyExchange (if needed, e.g. DHE) --|
+  |<----------------- ServerHelloDone ---------------------------|
+  |                                                            |
+  |------------------ ClientKeyExchange ----------------------->|
+  |   (pre-master secret, encrypted with server's public key,   |
+  |    or DH public value)                                      |
+  |------------------ ChangeCipherSpec -------------------------->|
+  |------------------ Finished (first encrypted message) -------->|
+  |                                                            |
+  |<----------------- ChangeCipherSpec ---------------------------|
+  |<----------------- Finished ------------------------------------|
+  |                                                            |
+  |========= Encrypted Application Data (Record Protocol) =====|
+```
+
+- Both sides derive a **master secret** from the pre-master secret plus both random nonces, then derive symmetric session keys and MAC keys from it (via a PRF).
+- **Cipher suite negotiation:** each cipher suite specifies a bundle — key-exchange algorithm (RSA / DHE / ECDHE), bulk encryption algorithm (AES-GCM, ChaCha20), and MAC/hash algorithm (SHA-256, etc.). The server picks one from the client's offered list.
+- **Certificates** let the client authenticate the server's identity (and optionally vice-versa) using the CA-based trust chain (Section 2.11) before trusting the exchanged key material — this prevents man-in-the-middle attacks.
+
+**Record Protocol** (used after the handshake for actual data): takes application data → **fragments** it into blocks → optionally **compresses** → applies a **MAC** (integrity) → **encrypts** with the negotiated symmetric cipher → prepends a header → hands to TCP.
+
+### 2.8 SSH (Secure Shell)
+
+SSH provides a secure channel for **remote login, command execution, and file transfer/tunneling** over an insecure network, replacing legacy cleartext tools like Telnet, rlogin, and FTP.
+
+**Difference from SSL/TLS:**
+- SSH is designed specifically for **interactive remote administration and port forwarding/tunneling**, whereas SSL/TLS is a general-purpose transport-security layer meant to secure *any* application protocol (HTTP, SMTP, etc.).
+- SSH typically authenticates the **server via a known-hosts fingerprint model** (trust-on-first-use, no mandatory CA hierarchy), while SSL/TLS relies heavily on the **CA-based X.509 PKI** for server authentication.
+- SSH natively supports strong **user authentication methods**: (1) **password authentication** — user's password sent over the encrypted channel; (2) **public-key authentication** — user pre-installs their public key in the server's `authorized_keys` file, and proves possession of the matching private key via a challenge-response during connection setup (no password ever transmitted); also supports host-based and keyboard-interactive authentication.
+
+### 2.9 Disk Encryption
+
+**Full-Disk Encryption (FDE)** encrypts the entire contents of a storage volume (including the OS, swap, and temp files), transparently at the block-device layer, typically using **AES in XTS mode** (chosen because it handles random-access sector-level encryption without the malleability weaknesses of simpler modes). Examples: BitLocker (Windows), FileVault (macOS), LUKS/dm-crypt (Linux).
+
+- **At-rest protection (what FDE gives you):** protects data if the physical device is lost, stolen, or improperly disposed of — an attacker with the raw disk cannot read its contents without the decryption key/passphrase.
+- **In-transit protection (what FDE does NOT give you):** while data is being transmitted over a network, FDE offers nothing — that protection comes from transport-layer mechanisms like **TLS, SSH, or IPSec**. A file can be perfectly safe at rest on an encrypted disk yet travel completely in the clear across the network unless a separate in-transit mechanism is also applied. These are two independent threat models and both are typically needed together ("defense in depth").
+
+### 2.10 Government Access to Keys (GAK)
+
+**GAK** refers to policy proposals requiring cryptographic systems to include a mechanism (often called **key escrow**) by which government/law-enforcement agencies can obtain access to encrypted communications or stored keys, typically with legal authorization (a warrant). The best-known historical example is the U.S. **Clipper Chip** initiative (1990s), which embedded an escrowed key held in parts by government agencies.
+
+**The policy debate:**
+- **Pro-GAK argument:** law enforcement and intelligence agencies need lawful access to investigate crime, terrorism, and national-security threats when suspects use strong encryption ("going dark" problem).
+- **Anti-GAK argument (the dominant position in the security community):** a backdoor or escrow mechanism cannot be built to work only for "authorized good actors" — any such mechanism is an additional attack surface that can be discovered/stolen by criminals or hostile states; the escrow database itself becomes a high-value single point of failure; it weakens trust in security products globally and pushes serious adversaries toward alternative (unregulated) tools anyway, so the net effect is reduced security for ordinary users without a proportional law-enforcement benefit.
+
+### 2.11 Digital Signatures — Full Analysis
+
+**Components:**
+- **Message `M`** (or its hash digest) to be signed.
+- **Sender's private key `SK`** — used only by the sender to *generate* the signature.
+- **Sender's public key `PK`** — published/certified, used by anyone to *verify* the signature.
+- **Signing algorithm `Sign(SK, M) → S`** and **verification algorithm `Verify(PK, M, S) → {valid, invalid}`**.
+
+**Method / algorithm flow:**
+
+```
+SIGNING (done by sender, who holds the private key d)
+
+   Message M
+      |
+      v
+   Hash function H() -----------------> digest h = H(M)
+      |
+      v
+   "Encrypt" digest with PRIVATE key ---> Signature S = h^d mod n   (RSA-style)
+      |
+      v
+   Send (M, S)  to the receiver
+
+
+VERIFICATION (done by receiver, who holds the public key e)
+
+   Receive (M, S)
+      |
+      +---> recompute digest:  h' = H(M)
+      |
+      +---> "decrypt" signature with PUBLIC key: h = S^e mod n
+      |
+      v
+   Compare h' == h ?
+        Yes → signature is VALID  (message authentic + unaltered + non-repudiable)
+        No  → signature INVALID  (message tampered or signer's identity fraudulent)
+```
+
+**Applications:** software/code signing (verifying an installer wasn't tampered with), signing financial transactions, legally binding e-signatures on documents, authenticating TLS certificates (a CA signs the certificate), email signing (PGP/S-MIME), blockchain transaction authorization.
+
+**Standard:** The **Digital Signature Standard (DSS)**, published by NIST as **FIPS 186**, originally specified the **Digital Signature Algorithm (DSA)** — based on the discrete-logarithm problem — and has since been extended to also permit **RSA-based signatures** and **ECDSA**.
+
+- **DSA (core of DSS):** domain parameters — large prime `p`, prime divisor `q` of `p−1`, generator `g = h^((p−1)/q) mod p`. Private key `x` (random, `0<x<q`); public key `y = g^x mod p`. Signing chooses random `k`, computes `r = (g^k mod p) mod q` and `s = k⁻¹(H(m) + x·r) mod q`; signature is `(r, s)`. Verification recomputes `w = s⁻¹ mod q`, `u1 = H(m)·w mod q`, `u2 = r·w mod q`, `v = ((g^u1 · y^u2) mod p) mod q`; valid if `v = r`.
+
+- **ECDSA (Elliptic Curve DSA):** the same signing logic as DSA but performed over the algebraic structure of points on an **elliptic curve** instead of a multiplicative group modulo a prime. Because the elliptic-curve discrete-logarithm problem (ECDLP) is much harder per bit than the classical discrete-log problem, ECDSA achieves the **same security level with far smaller keys** — a 256-bit ECC key is roughly as strong as a 3072-bit RSA/DSA key. Benefits: smaller signatures, faster key generation, lower bandwidth/storage — important for constrained devices, TLS 1.3, and cryptocurrencies (e.g., Bitcoin, Ethereum use ECDSA/secp256k1).
+
+- **ElGamal Signature Scheme:** predates DSA and is based directly on the discrete-log problem in `Z_p*`.
+  - **Key generation:** choose large prime `p`, generator `g` of `Z_p*`; private key `x` (`1<x<p−1`); public key `y = g^x mod p`.
+  - **Signing** a message digest `H(m)`: choose a random ephemeral key `k` with `gcd(k, p−1) = 1`; compute `r = g^k mod p`; compute `s = k⁻¹ · (H(m) − x·r) mod (p−1)`. Signature = `(r, s)`.
+  - **Verification:** signature is accepted **iff** `g^H(m) mod p ≡ y^r · r^s mod p`.
+  - (Full worked numerical in Section 4.)
+
+### 2.12 Digital Certificates & X.509
+
+A **digital certificate** binds a public key to an identity, digitally signed by a trusted **Certificate Authority (CA)**, following the **X.509** standard structure:
+
+- Version, Serial Number
+- Signature Algorithm Identifier (used by the CA to sign this cert)
+- Issuer Name (the CA)
+- Validity Period (Not Before / Not After)
+- Subject Name (the entity the cert belongs to)
+- Subject's Public Key Info
+- Extensions (key usage, Subject Alternative Names, etc.)
+- **CA's Digital Signature** over all of the above fields
+
+**Role of the CA:** verifies the requester's identity/domain ownership before issuing a certificate, then signs the certificate with the CA's own private key — anyone holding the CA's trusted public key can verify the certificate is authentic and unmodified.
+
+**Chain of trust:**
+
+```
+        +---------------------------+
+        |        Root CA            |
+        |   (self-signed cert;      |
+        |  pre-installed as trusted |
+        |   in OS/browser store)    |
+        +-------------+-------------+
+                       | signs
+                       v
+        +---------------------------+
+        |     Intermediate CA       |
+        |  (cert signed by Root CA) |
+        +-------------+-------------+
+                       | signs
+                       v
+        +---------------------------+
+        |   End-entity certificate   |
+        |   e.g. www.example.com     |
+        |  (signed by Intermediate)  |
+        +---------------------------+
+```
+
+A browser verifies a server's end-entity certificate by checking the Intermediate CA's signature on it, then checking the Root CA's signature on the Intermediate, stopping once it reaches a Root CA already present in its local trust store — this is the **chain of trust**. Revocation is handled via **CRLs (Certificate Revocation Lists)** or the real-time **OCSP (Online Certificate Status Protocol)**.
+
+---
+
+## 3. KEY POINTS & COMPARISONS
+
+**Revision bullets:**
+- A hash is unkeyed and gives no authentication by itself; a MAC adds a shared secret key for authentication + integrity; a digital signature adds asymmetric keys for authentication + integrity + non-repudiation.
+- Collision resistance is bounded by the **birthday paradox**, not brute force — an *n*-bit hash gives only ~*n/2*-bit collision resistance.
+- MD5 (128-bit) and SHA-1 (160-bit) are both practically broken for collision resistance; SHA-256 (256-bit) is the current safe minimum.
+- Kerberos never sends the password over the network — it sends things *encrypted with* keys derived from the password.
+- Kerberos tickets carry lifetimes/timestamps specifically to defeat replay attacks; this is why clock sync across the realm is mandatory.
+- SSL/TLS secures arbitrary application protocols end-to-end over the internet using CA-issued certificates; SSH secures interactive remote sessions using host fingerprints and/or user public keys, with no mandatory CA hierarchy.
+- RSA signatures and ElGamal/DSA signatures both rely on the sender's private key to "sign" a hash digest — never sign the raw message directly for efficiency and to avoid certain algebraic attacks.
+- ECDSA gives equivalent security to RSA/DSA with much smaller key/signature sizes because ECDLP is harder per bit than integer factorization/discrete log.
+- Disk encryption protects data **at rest**; TLS/SSH/IPSec protect data **in transit** — they are complementary, not substitutes.
+- GAK/key escrow is rejected by most security professionals because a backdoor cannot be selectively secure — if it exists, it can be found and abused by anyone, not just the intended authority.
+
+### Hash vs MAC vs Digital Signature
+
+| Property | Hash (e.g., SHA-256) | MAC (e.g., HMAC-SHA256) | Digital Signature (e.g., RSA-Sign) |
+|---|---|---|---|
+| Key used | None | Shared **secret** key | Sender's **private** key (asymmetric) |
+| Integrity | Yes (if digest delivered securely) | Yes | Yes |
+| Authentication | No | Yes | Yes |
+| Non-repudiation | No | No (both parties share the key) | **Yes** |
+| Verifiable by | Anyone (no proof of origin) | Only holder of shared key | Anyone (with sender's public key) |
+| Typical use | Integrity checksums, building block for MAC/DS | Message authentication between two parties | Legal signatures, certificates, code signing |
+
+### MD5 vs SHA-1 vs SHA-256
+
+| Feature | MD5 | SHA-1 | SHA-256 |
+|---|---|---|---|
+| Digest size | 128 bits | 160 bits | 256 bits |
+| Block size | 512 bits | 512 bits | 512 bits |
+| Rounds | 64 (4×16) | 80 | 64 |
+| Structure | Merkle–Damgård | Merkle–Damgård | Merkle–Damgård |
+| Collision status | **Broken** (seconds, chosen-prefix) | **Broken** (SHAttered, 2017) | No known collision |
+| Current recommendation | Do not use for security | Deprecated | Current safe minimum |
+
+### SSL vs SSH
+
+| Feature | SSL/TLS | SSH |
+|---|---|---|
+| Primary purpose | Secure arbitrary application protocols (HTTPS, SMTP, etc.) | Secure interactive remote login, command execution, tunneling |
+| Layer | Between transport and application layer | Application-layer protocol with its own transport/session layers |
+| Server authentication | CA-issued X.509 certificate | Host key fingerprint (trust-on-first-use), no mandatory CA |
+| Client/user authentication | Optional client certificates | Password or public-key challenge-response (common) |
+| Typical port | 443 (HTTPS) | 22 |
+
+### RSA Signature vs ElGamal Signature vs ECDSA
+
+| Feature | RSA Signature | ElGamal Signature | ECDSA |
+|---|---|---|---|
+| Mathematical basis | Integer factorization | Discrete logarithm (mod p) | Elliptic-curve discrete logarithm (ECDLP) |
+| Key size for ~128-bit security | ~3072 bits | ~3072 bits | ~256 bits |
+| Signature size | Large (matches key size) | Two values (r,s), each ~ size of p | Two values (r,s), each ~256 bits — much smaller |
+| Speed (sign/verify) | Verify fast, sign slower | Moderate | Fast, efficient on constrained devices |
+| Randomness requirement | Not required for signing (deterministic) | Fresh random `k` required every time (reuse leaks private key) | Fresh random `k` required (same reuse risk) |
+| Deterministic? | Yes | No | No (deterministic variant RFC 6979 exists) |
+| Widely used in | X.509 certs, TLS (older), code signing | Mostly academic/legacy; basis for DSA | TLS 1.3, Bitcoin/Ethereum, mobile/IoT |
+
+---
+
+## 4. NUMERICALS & FORMULAS
+
+### 4.1 Formulas
+
+**RSA digital signature:**
+- Key generation: `n = p × q`, `φ(n) = (p−1)(q−1)`, choose `e` with `gcd(e, φ(n)) = 1`, compute `d = e⁻¹ mod φ(n)`.
+- Signing: `S = H(M)^d mod n`
+- Verification: accept iff `H(M) ≡ S^e mod n`
+
+**ElGamal signature scheme:**
+- Key generation: prime `p`, generator `g` of `Z_p*`, private key `x` (`1<x<p−1`), public key `y = g^x mod p`.
+- Signing: choose random `k` with `gcd(k, p−1) = 1`; `r = g^k mod p`; `s = k⁻¹ (H(m) − x·r) mod (p−1)`.
+- Verification: accept iff `g^H(m) mod p ≡ y^r · r^s mod p`.
+
+**DSA (DSS) — for reference:**
+- `r = (g^k mod p) mod q`; `s = k⁻¹(H(m) + x·r) mod q`.
+- Verify: `w = s⁻¹ mod q`; `u1 = H(m)w mod q`; `u2 = rw mod q`; valid iff `((g^u1 · y^u2) mod p) mod q = r`.
+
+**ECDSA — for reference:**
+- `r = x-coordinate of (kG) mod n`; `s = k⁻¹(H(m) + r·d) mod n`.
+- Verify: `u1 = H(m)s⁻¹ mod n`, `u2 = r·s⁻¹ mod n`; valid iff x-coordinate of `(u1·G + u2·Q) ≡ r mod n`.
+
+**Birthday-paradox collision probability approximation:**
+- General: `P(collision) ≈ 1 − e^(−k²/2N)` where `N = 2ⁿ` (n = hash output bits, k = number of hashes computed).
+- Number of hashes needed for ~50% collision probability: `k₀.₅ ≈ 1.1774 × √N = 1.1774 × 2^(n/2)`.
+
+---
+
+### 4.2 Worked Numerical 1 — RSA-Based Digital Signature
+
+**Given:** `p = 7`, `q = 11`. Message digest `H(M) = 15`.
+
+**Step 1 — Compute `n` and `φ(n)`:**
+`n = p × q = 7 × 11 = 77`
+`φ(n) = (p−1)(q−1) = 6 × 10 = 60`
+
+**Step 2 — Choose public exponent `e`:**
+Need `gcd(e, 60) = 1`. Choose `e = 7`. Check: `gcd(7,60)`: `60 = 8×7+4`, `7=1×4+3`, `4=1×3+1`, `3=3×1+0` → gcd = 1. ✓ Valid.
+
+**Step 3 — Compute private exponent `d = e⁻¹ mod 60`:**
+Need `7d ≡ 1 (mod 60)`. Try `d = 43`: `7 × 43 = 301 = 5×60 + 1` → remainder 1. ✓
+So `d = 43`. **Public key = (e=7, n=77). Private key = (d=43, n=77).**
+
+**Step 4 — Sign the digest:** `S = H(M)^d mod n = 15^43 mod 77`
+
+Compute by repeated squaring mod 77:
+- `15^1 = 15`
+- `15^2 = 225 mod 77 = 225 − 154 = 71`
+- `15^4 = 71^2 = 5041 mod 77 = 5041 − 5005 = 36`
+- `15^8 = 36^2 = 1296 mod 77 = 1296 − 1232 = 64`
+- `15^16 = 64^2 = 4096 mod 77 = 4096 − 4081 = 15`
+- `15^32 = 15^2 = 71` (since `15^32 = (15^16)^2 = 15^2 mod 77`)
+
+`43 = 32 + 8 + 2 + 1`, so:
+`15^43 = 15^32 × 15^8 × 15^2 × 15^1 mod 77 = 71 × 64 × 71 × 15 mod 77`
+
+- `71 × 64 = 4544`; `4544 mod 77`: `77 × 59 = 4543` → remainder `1`
+- `1 × 71 = 71`
+- `71 × 15 = 1065`; `1065 mod 77`: `77 × 13 = 1001` → remainder `64`
+
+`S = 64`
+
+**Step 5 — Verify:** compute `S^e mod n = 64^7 mod 77` and check it equals `H(M) = 15`.
+- `64^2 = 4096 mod 77 = 15`
+- `64^4 = 15^2 mod 77 = 225 mod 77 = 71`
+- `64^7 = 64^4 × 64^2 × 64^1 mod 77 = 71 × 15 × 64 mod 77`
+  - `71 × 15 = 1065 mod 77 = 64`
+  - `64 × 64 = 4096 mod 77 = 15`
+
+`S^e mod n = 15 = H(M)` ✓ **Signature is valid.**
+
+---
+
+### 4.3 Worked Numerical 2 — ElGamal Signature Scheme
+
+**Given:** prime `p = 23`, generator `g = 5` (verified primitive root of `Z_23*`), private key `x = 6`, message digest `H(m) = 17`, random ephemeral key `k = 7`.
+
+**Step 1 — Compute public key `y = g^x mod p = 5^6 mod 23`:**
+- `5^2 = 25 mod 23 = 2`
+- `5^4 = 2^2 = 4`
+- `5^6 = 5^4 × 5^2 = 4 × 2 = 8`
+
+`y = 8`
+
+**Step 2 — Check `gcd(k, p−1) = gcd(7, 22) = 1`** ✓ (22 = 2×11, shares no factor with 7)
+
+**Step 3 — Compute `r = g^k mod p = 5^7 mod 23`:**
+`5^7 = 5^4 × 5^2 × 5^1 = 4 × 2 × 5 = 40 mod 23 = 17`
+
+`r = 17`
+
+**Step 4 — Compute `k⁻¹ mod (p−1) = 7⁻¹ mod 22`:**
+Try 19: `7 × 19 = 133 = 6×22 + 1` → remainder 1. ✓ So `k⁻¹ = 19`.
+
+**Step 5 — Compute `s = k⁻¹ (H(m) − x·r) mod (p−1)`:**
+- `x·r = 6 × 17 = 102`; `102 mod 22`: `22×4=88` → `102 − 88 = 14`
+- `H(m) − x·r mod 22 = 17 − 14 = 3`
+- `s = 19 × 3 mod 22 = 57 mod 22 = 57 − 44 = 13`
+
+`s = 13`. **Signature = (r, s) = (17, 13)**
+
+**Step 6 — Verify:** check `g^H(m) mod p ≡ y^r × r^s mod p`
+
+LHS: `5^17 mod 23`
+- `5^16 = (5^8)^2`; `5^8 = (5^4)^2 = 4^2 = 16`; `5^16 = 16^2 = 256 mod 23 = 256 − 253 = 3`
+- `5^17 = 5^16 × 5 = 3 × 5 = 15`
+
+**LHS = 15**
+
+RHS: `8^17 × 17^13 mod 23`
+- `8^2 = 64 mod 23 = 18`
+- `8^4 = 18^2 = 324 mod 23 = 324 − 322 = 2`
+- `8^8 = 2^2 = 4`
+- `8^16 = 4^2 = 16`
+- `8^17 = 8^16 × 8 = 16 × 8 = 128 mod 23 = 128 − 115 = 13`
+
+- `17^2 = 289 mod 23 = 289 − 276 = 13`
+- `17^4 = 13^2 = 169 mod 23 = 169 − 161 = 8`
+- `17^8 = 8^2 = 64 mod 23 = 18`
+- `17^13 = 17^8 × 17^4 × 17^1 = 18 × 8 × 17 mod 23`
+  - `18 × 8 = 144 mod 23 = 144 − 138 = 6`
+  - `6 × 17 = 102 mod 23 = 102 − 92 = 10`
+
+`17^13 = 10`
+
+- RHS `= 8^17 × 17^13 mod 23 = 13 × 10 mod 23 = 130 mod 23 = 130 − 115 = 15`
+
+**RHS = 15 = LHS** ✓ **Signature is valid.**
+
+---
+
+### 4.4 Worked Numerical 3 — Birthday Paradox / Hash Collision Estimate
+
+**Given:** a hash function with output size `n = 128 bits` (e.g., MD5). Estimate the number of hashes that must be computed for a 50% probability of finding a collision.
+
+**Step 1 — Total possible hash outputs:**
+`N = 2^n = 2^128`
+
+**Step 2 — Apply birthday-bound formula for 50% collision probability:**
+`k₀.₅ ≈ 1.1774 × √N = 1.1774 × 2^(n/2) = 1.1774 × 2^64`
+
+**Step 3 — Compute `2^64`:**
+`2^64 = 18,446,744,073,709,551,616 ≈ 1.8447 × 10^19`
+
+**Step 4 — Multiply by the constant `1.1774`:**
+`k₀.₅ ≈ 1.1774 × 1.8447 × 10^19 ≈ 2.172 × 10^19`
+
+**Result:** approximately **2.17 × 10^19 hash computations** are needed before there is a 50% chance of finding *some* colliding pair, for a 128-bit hash function.
+
+**Interpretation:** this is roughly the square root of the full 2^128 search space — i.e., an *n*-bit hash function only offers about **n/2 bits of actual collision resistance** (here, 64-bit strength) even though its output looks 128 bits "strong." This is exactly why MD5 (128-bit output → 64-bit collision resistance) is now considered weak, and why SHA-256 (256-bit output → 128-bit collision resistance) is preferred — 2^64 operations are within reach of modern computing clusters, whereas 2^128 is not.
+
+---
+
+## 5. PREVIOUS YEAR QUESTIONS (PYQs) & MOCK QUESTIONS
+
+**Q1. What is a cryptographic hash function? Explain its essential properties. Using the birthday paradox, estimate the number of hash computations required for a 50% probability of collision for a 128-bit hash.**
+Model-answer outline:
+- Define hash function + ASCII pipeline diagram (arbitrary input → fixed digest).
+- List and define the 3 properties: pre-image resistance, second pre-image resistance, collision resistance.
+- State birthday-bound formula `k₀.₅ ≈ 1.1774 × 2^(n/2)`.
+- Plug `n=128` → `2^64 ≈ 1.8447×10^19` → multiply by 1.1774 → `≈2.17×10^19`.
+- Conclude: n-bit hash gives only n/2-bit collision resistance; explains why MD5/128-bit is weak.
+
+**Q2. Explain the Kerberos authentication protocol in detail with a neat diagram. What are its limitations?**
+Model-answer outline:
+- Draw AS/TGS/Client/Server sequence diagram (6 messages).
+- Explain AS exchange (TGT + session key issuance), TGS exchange (service ticket issuance using authenticator), Client/Server exchange (mutual authentication with timestamp).
+- Explain why passwords never travel on the wire; why timestamps/lifetimes stop replay attacks.
+- Limitations: clock-sync dependency, KDC single point of failure, password-guessing risk, cross-realm scaling complexity.
+
+**Q3. Explain the SSL/TLS handshake protocol with a diagram. What role do digital certificates play?**
+Model-answer outline:
+- Draw ClientHello → ServerHello/Certificate/ServerKeyExchange/ServerHelloDone → ClientKeyExchange/ChangeCipherSpec/Finished → ChangeCipherSpec/Finished diagram.
+- Explain cipher-suite negotiation (key exchange + bulk cipher + MAC).
+- Explain master secret derivation from pre-master secret + both randoms.
+- Explain Record Protocol briefly (fragment → compress → MAC → encrypt).
+- Certificates: server authentication via CA-signed X.509 cert, preventing MITM.
+
+**Q4. Differentiate between Hash Function, Message Authentication Code (MAC), and Digital Signature. Also compare MD5, SHA-1, and SHA-256.**
+Model-answer outline:
+- Present the Hash vs MAC vs Digital Signature comparison table (key used, integrity, authentication, non-repudiation).
+- One line each explaining *why* hash lacks authentication (no secret key) and why MAC lacks non-repudiation (shared key).
+- Present MD5 vs SHA-1 vs SHA-256 table (digest size, rounds, collision status).
+- One line on why MD5/SHA-1 are broken (birthday bound + practical collision attacks: Wang et al., SHAttered).
+
+**Q5. Explain the RSA-based digital signature scheme. Given p = 7, q = 11, and message digest H(M) = 15, generate the keys, sign the digest, and verify the signature.**
+Model-answer outline:
+- Explain signature generation/verification method with ASCII diagram (sign with private key, verify with public key, compare digests).
+- Compute `n = 77`, `φ(n) = 60`, choose `e = 7`, derive `d = 43`.
+- Compute `S = 15^43 mod 77 = 64` via repeated squaring (show `15^2, 15^4, 15^8, 15^16, 15^32` intermediate values).
+- Verify `S^7 mod 77 = 15 = H(M)` → signature valid.
+- Note: an ElGamal-based version of this question follows an identical structure — see Section 4.3 for the fully worked ElGamal analogue.

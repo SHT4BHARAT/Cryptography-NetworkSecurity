@@ -1,0 +1,15 @@
+# Vercel & Build Artifacts
+.vercel/
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+
+# IDE & Tooling
+.vscode/
+.idea/
+.claude/
+
+# Temporary & Log Files
+*.log
+*.tmp

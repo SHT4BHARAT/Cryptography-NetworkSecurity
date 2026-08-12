@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Cipher Workbench — CNS Field Manual</title>
+<meta name="description" content="Interactive cryptographic tools for RSA, Diffie-Hellman, Caesar, Vigenère, Hashing, and Block Ciphers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .workbench-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  .tool-card {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 4px;
+    padding: 1.6rem 1.8rem;
+    border-top: 5px solid var(--amber);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.3);
+  }
+  .tool-card h2 {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    margin: 0 0 0.5rem;
+    color: var(--ink);
+    border-bottom: 2px solid var(--paper-3);
+    padding-bottom: 0.4rem;
+  }
+  .tool-card p.desc {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin: 0 0 1rem;
+  }
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.35rem;
+    font-weight: 700;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    background: var(--paper-2);
+    border: 1px solid var(--paper-3);
+    border-radius: 4px;
+    color: var(--ink);
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--amber);
+    box-shadow: 0 0 0 2px rgba(217,164,65,0.25);
+  }
+  .btn-calc {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.6rem 1.2rem;
+    background: var(--navy);
+    color: var(--amber);
+    border: 1px solid var(--amber);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-calc:hover {
+    background: var(--amber);
+    color: var(--navy);
+  }
+  .result-box {
+    margin-top: 1rem;
+    background: var(--navy-2);
+    color: var(--paper);
+    padding: 1rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    border-left: 4px solid var(--teal);
+    overflow-x: auto;
+  }
+  .result-box strong {
+    color: var(--amber);
+  }
+  .step-line {
+    margin: 0.3rem 0;
+    color: var(--muted);
+  }
+  .step-line span.highlight {
+    color: var(--paper);
+    font-weight: 700;
+  }
+  .tab-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    border: 1px solid var(--navy-3);
+    background: var(--navy-2);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    background: var(--amber);
+    color: var(--navy);
+    border-color: var(--amber);
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand">⌗ CNS <span>FIELD MANUAL</span></span>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="unit1.html">Unit I</a>
+    <a href="unit2.html">Unit II</a>
+    <a href="unit3.html">Unit III</a>
+    <a href="unit4.html">Unit IV</a>
+    <a href="unit5.html">Unit V</a>
+    <a href="flashcards.html">Flashcards</a>
+    <a href="mindmap.html">Mind Map</a>
+    <a href="tools.html" class="active">Tools</a>
+    <a href="quiz.html">Quiz</a>
+  </nav>
+  <div class="search-wrap">
+    <span class="progress-pill" id="progressPill">0/5 UNITS REVIEWED</span>
+  </div>
+</header>
+
+<div class="tool-wrap">
+  <h1>Interactive Cryptographic Workbench</h1>
+  <p class="tool-lede">Calculate RSA key pairs, simulate Diffie-Hellman key exchange, test classic ciphers, and generate cryptographic hashes with step-by-step mathematical proofs.</p>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" data-target="tool-rsa">RSA Workbench</button>
+    <button class="tab-btn" data-target="tool-dh">Diffie-Hellman</button>
+    <button class="tab-btn" data-target="tool-classic">Caesar &amp; Vigenère</button>
+    <button class="tab-btn" data-target="tool-hash">Hash &amp; Signature</button>
+  </div>
+
+  <!-- RSA TOOL -->
+  <div class="tool-card" id="tool-rsa">
+    <h2>1. RSA Key Pair &amp; Cipher Calculator</h2>
+    <p class="desc">Compute RSA parameters \(n, \phi(n), e, d\), encrypt a numeric message \(M\), and decrypt back to verify \(M = C^d \bmod n\).</p>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem;">
+      <div class="form-group">
+        <label>Prime p</label>
+        <input type="number" id="rsa-p" value="61" placeholder="e.g. 61">
+      </div>
+      <div class="form-group">
+        <label>Prime q</label>
+        <input type="number" id="rsa-q" value="53" placeholder="e.g. 53">
+      </div>
+      <div class="form-group">
+        <label>Public Exponent e</label>
+        <input type="number" id="rsa-e" value="17" placeholder="e.g. 17">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Plaintext Message M (Integer &lt; n)</label>
+      <input type="number" id="rsa-m" value="65" placeholder="e.g. 65">
+    </div>
+
+    <button class="btn-calc" id="btn-rsa-calc">Calculate RSA Keys &amp; Encrypt</button>
+    <div class="result-box" id="rsa-result">Click calculate to view RSA step-by-step resolution.</div>
+  </div>
+
+  <!-- DIFFIE-HELLMAN TOOL -->
+  <div class="tool-card" id="tool-dh" style="display:none;">
+    <h2>2. Diffie-Hellman Key Exchange Simulator</h2>
+    <p class="desc">Simulate key exchange over an insecure channel between Alice and Bob to derive matching shared secret key \(S\).</p>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+      <div class="form-group">
+        <label>Shared Prime p</label>
+        <input type="number" id="dh-p" value="23">
+      </div>
+      <div class="form-group">
+        <label>Generator g</label>
+        <input type="number" id="dh-g" value="5">
+      </div>
+      <div class="form-group">
+        <label>Alice Private Key a</label>
+        <input type="number" id="dh-a" value="6">
+      </div>
+      <div class="form-group">
+        <label>Bob Private Key b</label>
+        <input type="number" id="dh-b" value="15">
+      </div>
+    </div>
+
+    <button class="btn-calc" id="btn-dh-calc">Simulate Key Exchange</button>
+    <div class="result-box" id="dh-result">Click simulate to execute exchange.</div>
+  </div>
+
+  <!-- CLASSIC CIPHERS TOOL -->
+  <div class="tool-card" id="tool-classic" style="display:none;">
+    <h2>3. Classic Cipher Playground (Caesar &amp; Vigenère)</h2>
+    <p class="desc">Test shift-based Caesar substitution or polyalphabetic Vigenère encryption/decryption live.</p>
+
+    <div class="form-group">
+      <label>Cipher Mode</label>
+      <select id="classic-mode">
+        <option value="caesar">Caesar Cipher (Shift)</option>
+        <option value="vigenere">Vigenère Cipher (Keyword)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Text Input</label>
+      <textarea id="classic-text" rows="3">DEFEND THE EAST WALL AT DAWN</textarea>
+    </div>
+
+    <div class="form-group" id="caesar-key-group">
+      <label>Shift Value (0-25)</label>
+      <input type="number" id="caesar-shift" value="3" min="0" max="25">
+    </div>
+
+    <div class="form-group" id="vigenere-key-group" style="display:none;">
+      <label>Keyword</label>
+      <input type="text" id="vigenere-key" value="LEMON">
+    </div>
+
+    <div style="display:flex; gap:0.6rem;">
+      <button class="btn-calc" id="btn-classic-encrypt">Encrypt</button>
+      <button class="btn-calc" style="background:var(--paper-2); color:var(--ink);" id="btn-classic-decrypt">Decrypt</button>
+    </div>
+
+    <div class="result-box" id="classic-result">Result will appear here.</div>
+  </div>
+
+  <!-- HASH & SIGNATURE TOOL -->
+  <div class="tool-card" id="tool-hash" style="display:none;">
+    <h2>4. Cryptographic Hash &amp; Digital Signature Generator</h2>
+    <p class="desc">Generate hashes (SHA-256 simulation) and digitally sign messages using public-key cryptography principles.</p>
+
+    <div class="form-group">
+      <label>Message Content</label>
+      <textarea id="hash-text" rows="3">TRANSFER $10,000 TO ACCOUNT #88392</textarea>
+    </div>
+
+    <button class="btn-calc" id="btn-hash-calc">Generate Hash &amp; Digital Signature</button>
+    <div class="result-box" id="hash-result">Click generate to compute hash and signature digest.</div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+<script src="tools.js"></script>
+</body>
+</html>

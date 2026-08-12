@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Quiz & Exam Simulator — CNS Field Manual</title>
+<meta name="description" content="Practice quizzes and exam simulator covering Cryptography & Network Security Units I to V with detailed model answer feedback.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .quiz-wrap {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2.2rem 1.5rem 6rem;
+  }
+  .quiz-card {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 4px;
+    padding: 2rem 2.5rem;
+    box-shadow: 0 16px 35px rgba(0,0,0,0.35);
+    border-top: 6px solid var(--amber);
+  }
+  .quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    border-bottom: 2px solid var(--paper-3);
+    padding-bottom: 0.8rem;
+  }
+  .quiz-header .unit-badge {
+    background: var(--navy);
+    color: var(--amber);
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+  }
+  .quiz-header .timer {
+    color: var(--red);
+    font-weight: 700;
+  }
+  .question-text {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    margin: 0 0 1.2rem;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .option-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.85rem 1.1rem;
+    background: var(--paper-2);
+    border: 2px solid var(--paper-3);
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+  }
+  .option-btn:hover {
+    border-color: var(--amber);
+    background: #e9dec9;
+  }
+  .option-btn.selected {
+    border-color: var(--navy);
+    background: var(--navy-3);
+    color: var(--paper);
+  }
+  .option-btn.correct {
+    border-color: var(--teal) !important;
+    background: rgba(76,122,107,0.2) !important;
+    color: var(--ink) !important;
+    font-weight: 700;
+  }
+  .option-btn.incorrect {
+    border-color: var(--red) !important;
+    background: rgba(178,58,46,0.18) !important;
+    color: var(--ink) !important;
+  }
+  .explanation-box {
+    margin-top: 1.2rem;
+    padding: 1.1rem;
+    background: var(--navy-2);
+    color: var(--paper);
+    border-left: 4px solid var(--amber);
+    border-radius: 4px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .explanation-box strong { color: var(--amber); }
+  .quiz-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+  }
+  .quiz-btn {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.65rem 1.4rem;
+    background: var(--navy);
+    color: var(--paper);
+    border: 1px solid var(--navy-3);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .quiz-btn:hover {
+    background: var(--amber);
+    color: var(--navy);
+    border-color: var(--amber);
+  }
+  .quiz-mode-select {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .mode-btn {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--navy-3);
+    background: var(--navy-2);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .mode-btn.active {
+    background: var(--amber);
+    color: var(--navy);
+    border-color: var(--amber);
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand">⌗ CNS <span>FIELD MANUAL</span></span>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="unit1.html">Unit I</a>
+    <a href="unit2.html">Unit II</a>
+    <a href="unit3.html">Unit III</a>
+    <a href="unit4.html">Unit IV</a>
+    <a href="unit5.html">Unit V</a>
+    <a href="flashcards.html">Flashcards</a>
+    <a href="mindmap.html">Mind Map</a>
+    <a href="tools.html">Tools</a>
+    <a href="quiz.html" class="active">Quiz</a>
+  </nav>
+  <div class="search-wrap">
+    <span class="progress-pill" id="progressPill">0/5 UNITS REVIEWED</span>
+  </div>
+</header>
+
+<div class="quiz-wrap">
+  <h1>Exam Drill &amp; Self-Assessment</h1>
+  <p class="tool-lede" style="color:var(--muted); margin-bottom:1.4rem;">Practice past exam questions across Units I–V with instant answer verification, detailed reasoning, and performance stats.</p>
+
+  <div class="quiz-mode-select">
+    <button class="mode-btn active" data-unit="all">All Units (Exam Mode)</button>
+    <button class="mode-btn" data-unit="1">Unit I (Fundamentals &amp; Risk)</button>
+    <button class="mode-btn" data-unit="2">Unit II (RSA, DES &amp; ECC)</button>
+    <button class="mode-btn" data-unit="3">Unit III (Hashing &amp; Signatures)</button>
+    <button class="mode-btn" data-unit="4">Unit IV (Malware &amp; Attacks)</button>
+    <button class="mode-btn" data-unit="5">Unit V (IPSec &amp; Forensics)</button>
+  </div>
+
+  <div class="quiz-card" id="quizCard">
+    <div class="quiz-header">
+      <span class="unit-badge" id="quizUnitBadge">UNIT I</span>
+      <span id="quizProgressText">Question 1 of 15</span>
+      <span class="timer" id="quizTimer">⏱ 15:00</span>
+    </div>
+
+    <h2 class="question-text" id="questionText">Loading Question...</h2>
+
+    <div class="options-list" id="optionsList">
+      <!-- Dynamically generated -->
+    </div>
+
+    <div id="explanationContainer" style="display:none;">
+      <div class="explanation-box" id="explanationText"></div>
+    </div>
+
+    <div class="quiz-controls">
+      <button class="quiz-btn" id="btnPrev" style="visibility:hidden;">← Previous</button>
+      <button class="quiz-btn" id="btnNext">Submit Answer</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY SCORE BOARD -->
+  <div class="quiz-card" id="scoreCard" style="display:none; text-align:center;">
+    <h2 style="font-family:var(--font-display); font-size:2rem; margin-bottom:0.5rem;">Drill Completed!</h2>
+    <p style="color:var(--ink-soft); margin-bottom:1.5rem;">Here is your performance breakdown for this session:</p>
+    
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; margin-bottom:2rem;">
+      <div style="background:var(--paper-2); padding:1rem; border-radius:6px;">
+        <b id="scorePercent" style="font-family:var(--font-mono); font-size:2rem; color:var(--amber);">80%</b>
+        <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--ink-soft);">ACCURACY</div>
+      </div>
+      <div style="background:var(--paper-2); padding:1rem; border-radius:6px;">
+        <b id="scoreCorrect" style="font-family:var(--font-mono); font-size:2rem; color:var(--teal);">12/15</b>
+        <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--ink-soft);">CORRECT</div>
+      </div>
+      <div style="background:var(--paper-2); padding:1rem; border-radius:6px;">
+        <b id="scoreTime" style="font-family:var(--font-mono); font-size:2rem; color:var(--red);">04:25</b>
+        <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--ink-soft);">TIME TAKEN</div>
+      </div>
+    </div>
+
+    <button class="quiz-btn" id="btnRestart" style="font-size:1rem; padding:0.8rem 2rem;">Retake Drill</button>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+<script src="quiz.js"></script>
+</body>
+</html>
