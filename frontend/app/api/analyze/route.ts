@@ -1,7 +1,7 @@
 // frontend/app/api/analyze/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { buildInsights, buildCategoryBreakdown } from "@/lib/analysis/insights";
+import { buildInsights, buildCategoryBreakdown, buildMonthlySeries } from "@/lib/analysis/insights";
 
 export async function GET() {
   const supabase = await createClient();
@@ -24,5 +24,6 @@ export async function GET() {
   return NextResponse.json({
     insights: buildInsights(tx),
     breakdown: buildCategoryBreakdown(tx),
+    series: buildMonthlySeries(tx),
   });
 }

@@ -1,16 +1,19 @@
 // frontend/app/(app)/dashboard/page.tsx
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { HealthGauge } from "@/components/HealthGauge";
 import { SpendingBreakdown } from "@/components/SpendingBreakdown";
 import { InsightsList } from "@/components/InsightsList";
 import { SubscriptionList } from "@/components/SubscriptionList";
+import { TrendChart } from "@/components/TrendChart";
 import { EmptyState } from "@/components/EmptyState";
 
 async function getApi<T>(path: string, cookieHeader: string): Promise<T | null> {
   try {
-    const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const res = await fetch(`${base}${path}`, {
+    const h = await headers();
+    const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+    const proto = h.get("x-forwarded-proto") ?? "http";
+    const res = await fetch(`${proto}://${host}${path}`, {
       headers: { cookie: cookieHeader },
       cache: "no-store",
     });
@@ -42,6 +45,7 @@ export default async function DashboardPage() {
     getApi<{
       insights: { kind: string; category: string; changePercent: number; share: number }[];
       breakdown: { category: string; amount: number; share: number }[];
+      series: { month: string; spending: number; income: number }[];
     }>("/api/analyze", cookieHeader),
     getApi<{
       subscriptions: { merchant: string; amount: number; cadence: string; lastDetected: string }[];
@@ -91,6 +95,9 @@ export default async function DashboardPage() {
           <SpendingBreakdown breakdown={analyze!.breakdown} />
           <div className="space-y-6">
             <InsightsList insights={analyze!.insights} />
+          </div>
+          <div className="lg:col-span-2">
+            <TrendChart series={analyze!.series ?? []} />
           </div>
         </div>
       )}

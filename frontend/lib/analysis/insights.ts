@@ -1,4 +1,6 @@
 // frontend/lib/analysis/insights.ts
+import { monthKeyOf, shiftMonth } from "@/lib/utils/date";
+
 export type Tx = { date: string; amount: number; category: string };
 export type Insight =
   | { kind: "top-category"; category: string; share: number }
@@ -6,6 +8,26 @@ export type Insight =
   | { kind: "spike"; category: string; changePercent: number };
 
 export type CategoryBreakdown = { category: string; amount: number; share: number };
+
+export type MonthPoint = { month: string; spending: number; income: number };
+
+export function buildMonthlySeries(transactions: Tx[]): MonthPoint[] {
+  const byMonth = new Map<string, { spending: number; income: number }>();
+  for (const t of transactions) {
+    const key = t.date.slice(0, 7);
+    const row = byMonth.get(key) ?? { spending: 0, income: 0 };
+    if (t.amount < 0) row.spending += Math.abs(Number(t.amount));
+    else row.income += Number(t.amount);
+    byMonth.set(key, row);
+  }
+  return [...byMonth.entries()]
+    .map(([month, { spending, income }]) => ({
+      month,
+      spending: Math.round(spending * 100) / 100,
+      income: Math.round(income * 100) / 100,
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+}
 
 export function buildCategoryBreakdown(transactions: Tx[]): CategoryBreakdown[] {
   const spending = transactions.filter((t) => t.amount < 0);
@@ -25,9 +47,8 @@ export function buildCategoryBreakdown(transactions: Tx[]): CategoryBreakdown[] 
 
 export function buildInsights(transactions: Tx[]): Insight[] {
   const now = new Date();
-  const thisKey = now.toISOString().slice(0, 7);
-  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevKey = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`;
+  const thisKey = monthKeyOf(now);
+  const prevKey = monthKeyOf(shiftMonth(now, -1));
 
   const spending = transactions.filter((t) => t.amount < 0);
   const total = Math.abs(spending.reduce((s, t) => s + Number(t.amount), 0));

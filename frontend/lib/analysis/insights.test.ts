@@ -1,12 +1,12 @@
 // frontend/lib/analysis/insights.test.ts
 import { describe, it, expect } from "vitest";
-import { buildInsights } from "./insights";
+import { buildInsights, buildMonthlySeries } from "./insights";
+import { monthKeyOf, shiftMonth } from "@/lib/utils/date";
 
 describe("buildInsights", () => {
   const now = new Date();
-  const thisKey = now.toISOString().slice(0, 7);
-  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevKey = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`;
+  const thisKey = monthKeyOf(now);
+  const prevKey = monthKeyOf(shiftMonth(now, -1));
 
   it("flags top category and a big MoM increase", () => {
     const tx = [
@@ -23,5 +23,19 @@ describe("buildInsights", () => {
 
   it("returns empty for no spending", () => {
     expect(buildInsights([])).toEqual([]);
+  });
+});
+
+describe("buildMonthlySeries", () => {
+  it("groups income and spending by month, chronological", () => {
+    const series = buildMonthlySeries([
+      { date: "2026-01-05", amount: 3000, category: "Income" },
+      { date: "2026-01-20", amount: -500, category: "Food & Dining" },
+      { date: "2026-02-02", amount: -120, category: "Transport" },
+    ]);
+    expect(series).toEqual([
+      { month: "2026-01", spending: 500, income: 3000 },
+      { month: "2026-02", spending: 120, income: 0 },
+    ]);
   });
 });
