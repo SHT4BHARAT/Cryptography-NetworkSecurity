@@ -3,7 +3,7 @@ import { parse } from "papaparse";
 import crypto from "crypto";
 
 export type ParsedRow =
-  | { ok: true; date: string; amount: number; description: string }
+  | { ok: true; date: string; amount: number; description: string; hash: string }
   | { ok: false; line: number; reason: string };
 
 export function parseDate(value: string): string | null {
@@ -18,7 +18,9 @@ export function parseDate(value: string): string | null {
 }
 
 export function normalizeAmount(value: unknown): number | null {
-  const n = Number(String(value).replace(/[,$\s]/g, ""));
+  const cleaned = String(value ?? "").replace(/[,$\s]/g, "").trim();
+  if (cleaned === "") return null;
+  const n = Number(cleaned);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -43,10 +45,9 @@ function headerLooksLikeHeader(cols: (string | undefined)[]): boolean {
 export function parseCsv(
   text: string,
   userId: string
-): { rows: ParsedRow[]; hashes: string[] } {
+): { rows: ParsedRow[] } {
   const result = parse<string[]>(text, { skipEmptyLines: true });
   const rows: ParsedRow[] = [];
-  const hashes: string[] = [];
   (result.data as string[][]).forEach((cols, idx) => {
     const line = idx + 2; // 1-based incl. header
     if (cols.length < 3) return; // tolerate blank junk rows
@@ -63,8 +64,7 @@ export function parseCsv(
     if (!description)
       return rows.push({ ok: false, line, reason: "Missing description" });
     const hash = dedupeHash(userId, date, amount, description);
-    rows.push({ ok: true, date, amount, description });
-    hashes.push(hash);
+    rows.push({ ok: true, date, amount, description, hash });
   });
-  return { rows, hashes };
+  return { rows };
 }
