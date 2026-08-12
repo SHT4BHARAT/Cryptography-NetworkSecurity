@@ -29,6 +29,11 @@ export const goalSchema = z.object({
   deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
+export const profileSchema = z.object({
+  fullName: z.string().trim().min(1).optional(),
+  monthlyIncome: z.number().nonnegative().optional(),
+});
+
 export async function parseJsonBody<T>(schema: z.ZodType<T>, body: unknown) {
   return schema.safeParse(body);
 }

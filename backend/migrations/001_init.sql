@@ -89,3 +89,32 @@ create policy "budgets own" on public.budgets for all using (auth.uid() = user_i
 create policy "goals own" on public.savings_goals for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "subscriptions own" on public.subscriptions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "snapshots own" on public.health_snapshots for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Auto-create a profile row for every new signup so the income fallback
+-- (profiles.monthly_income) is always reachable before any transaction exists.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (user_id, full_name)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'fullName', '')
+  )
+  on conflict (user_id) do nothing;
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Backfill: the trigger only fires for signups from here on. Any account created
+-- before this migration ran has no profiles row yet — cover it once, idempotently.
+insert into public.profiles (user_id, full_name)
+select id, coalesce(raw_user_meta_data ->> 'full_name', raw_user_meta_data ->> 'fullName', '')
+from auth.users
+on conflict (user_id) do nothing;
