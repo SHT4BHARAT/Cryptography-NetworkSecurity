@@ -217,8 +217,25 @@ _(Add screenshots of the dashboard, transaction import, budgets and health pages
 
 **Live demo:** _(add Vercel URL here)_
 
-Deployment steps: push to GitHub → import repo in Vercel → add the environment
-variables above → deploy. Supabase handles the database and auth.
+### Vercel Deployment Instructions
+
+1. **Option A: Deploy via Vercel CLI**
+   ```bash
+   npx vercel
+   ```
+
+2. **Option B: Deploy via GitHub Integration**
+   - Push repository to GitHub.
+   - Import the project into [Vercel Dashboard](https://vercel.com/new).
+   - Set **Root Directory** to `frontend` (or leave default if using root `vercel.json`).
+
+3. **Configure Environment Variables in Vercel:**
+   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase Project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Anon Key
+   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase Service Role Key
+   - `LLM_API_KEY` *(Optional)*: Key for AI categorization
+   - `LLM_BASE_URL` *(Optional)*: Base URL (default: `https://api.openai.com/v1`)
+   - `LLM_MODEL` *(Optional)*: Model name (default: `gpt-4o-mini`)
 
 ---
 
