@@ -5,6 +5,24 @@ export type Insight =
   | { kind: "mom-trend"; category: string; changePercent: number }
   | { kind: "spike"; category: string; changePercent: number };
 
+export type CategoryBreakdown = { category: string; amount: number; share: number };
+
+export function buildCategoryBreakdown(transactions: Tx[]): CategoryBreakdown[] {
+  const spending = transactions.filter((t) => t.amount < 0);
+  const total = Math.abs(spending.reduce((s, t) => s + Number(t.amount), 0));
+  if (total === 0) return [];
+  const byCat = new Map<string, number>();
+  for (const t of spending)
+    byCat.set(t.category, (byCat.get(t.category) ?? 0) + Math.abs(Number(t.amount)));
+  return [...byCat.entries()]
+    .map(([category, amount]) => ({
+      category,
+      amount: Math.round(amount * 100) / 100,
+      share: Math.round((amount / total) * 100),
+    }))
+    .sort((a, b) => b.amount - a.amount);
+}
+
 export function buildInsights(transactions: Tx[]): Insight[] {
   const now = new Date();
   const thisKey = now.toISOString().slice(0, 7);

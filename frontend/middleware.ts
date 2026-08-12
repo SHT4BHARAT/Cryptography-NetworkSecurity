@@ -2,9 +2,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup"];
+const PUBLIC_EXACT = new Set(["/"]);
+const PUBLIC_PREFIX = ["/login", "/signup"];
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -29,9 +31,9 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data } = await supabase.auth.getUser();
-  const isPublic = PUBLIC_PATHS.some((p) =>
-    request.nextUrl.pathname.startsWith(p)
-  );
+  const isPublic =
+    PUBLIC_EXACT.has(pathname) ||
+    PUBLIC_PREFIX.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   if (!data.user && !isPublic) {
     const url = request.nextUrl.clone();

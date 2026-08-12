@@ -50,7 +50,7 @@ export function parseCsv(
   (result.data as string[][]).forEach((cols, idx) => {
     const line = idx + 2; // 1-based incl. header
     if (cols.length < 3) return; // tolerate blank junk rows
-    const [dateRaw, desc, amountRaw, ...rest] = cols;
+    const [dateRaw, desc, amountRaw] = cols;
     if (idx === 0 && headerLooksLikeHeader([dateRaw, desc, amountRaw])) return;
     if (!dateRaw && !desc && !amountRaw) return;
     const date = parseDate(dateRaw);
