@@ -604,3 +604,42 @@ details.redact ul { margin: 0; }
   background: var(--amber);
 }
 
+/* ---------------- Creator Credit & Footer ---------------- */
+.credit-link {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--amber);
+  border: 1px solid rgba(217,164,65,0.6);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  background: rgba(217,164,65,0.08);
+}
+.credit-link:hover {
+  background: var(--amber);
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.site-footer {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--muted);
+  border-top: 1px solid var(--navy-3);
+  background: var(--navy-2);
+  margin-top: 4rem;
+}
+.site-footer a {
+  color: var(--amber);
+  font-weight: 700;
+}
+.site-footer a:hover {
+  text-decoration: underline;
+}
+
+
