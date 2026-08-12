@@ -164,7 +164,7 @@
     <h2>1. RSA Key Pair &amp; Cipher Calculator</h2>
     <p class="desc">Compute RSA parameters \(n, \phi(n), e, d\), encrypt a numeric message \(M\), and decrypt back to verify \(M = C^d \bmod n\).</p>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem;">
       <div class="form-group">
         <label>Prime p</label>
         <input type="number" id="rsa-p" value="61" placeholder="e.g. 61">
@@ -193,7 +193,7 @@
     <h2>2. Diffie-Hellman Key Exchange Simulator</h2>
     <p class="desc">Simulate key exchange over an insecure channel between Alice and Bob to derive matching shared secret key \(S\).</p>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem;">
       <div class="form-group">
         <label>Shared Prime p</label>
         <input type="number" id="dh-p" value="23">

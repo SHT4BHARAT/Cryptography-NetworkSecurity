@@ -242,6 +242,17 @@ function wireKeyboardShortcuts() {
   });
 }
 
+function wrapTablesForMobile() {
+  document.querySelectorAll(".paper table").forEach((table) => {
+    if (!table.parentElement.classList.contains("paper-table-wrap")) {
+      const wrap = document.createElement("div");
+      wrap.className = "paper-table-wrap";
+      table.parentNode.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    }
+  });
+}
+
 function initUnitPage() {
   if (!renderMarkdown()) return;
   const content = document.getElementById("content");
@@ -251,8 +262,42 @@ function initUnitPage() {
   tagWeightageCells();
   wireSearch(sections);
   addCopyCodeButtons();
+  wrapTablesForMobile();
   if (window.MathJax && window.MathJax.typesetPromise) {
     window.MathJax.typesetPromise([content]);
+  }
+}
+
+function initMobileNav() {
+  const topbar = document.querySelector(".topbar");
+  const nav = document.querySelector(".topbar nav");
+  if (!topbar || !nav) return;
+
+  if (!document.getElementById("mobileNavToggle")) {
+    const btn = document.createElement("button");
+    btn.id = "mobileNavToggle";
+    btn.className = "mobile-nav-toggle";
+    btn.setAttribute("aria-label", "Toggle Navigation Menu");
+    btn.innerHTML = `<span></span><span></span><span></span>`;
+
+    const brand = topbar.querySelector(".brand");
+    if (brand && brand.nextSibling) {
+      topbar.insertBefore(btn, brand.nextSibling);
+    } else {
+      topbar.insertBefore(btn, nav);
+    }
+
+    btn.addEventListener("click", () => {
+      const isOpen = topbar.classList.toggle("nav-open");
+      btn.classList.toggle("active", isOpen);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!topbar.contains(e.target) && topbar.classList.contains("nav-open")) {
+        topbar.classList.remove("nav-open");
+        btn.classList.remove("active");
+      }
+    });
   }
 }
 
@@ -260,5 +305,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initIndexPage();
   initUnitPage();
   wireKeyboardShortcuts();
+  initMobileNav();
 });
+
+
 
