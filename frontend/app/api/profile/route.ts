@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { profileSchema } from "@/lib/validation/schemas";
+import { rateLimit } from "@/lib/utils/rateLimit";
 
 export async function GET() {
   const supabase = await createClient();
@@ -32,6 +33,13 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const limit = rateLimit(`profile:${user.id}`, 30);
+  if (!limit.ok)
+    return NextResponse.json(
+      { error: "Too many requests. Try again shortly." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } }
+    );
 
   const parsed = profileSchema.safeParse(await req.json());
   if (!parsed.success)

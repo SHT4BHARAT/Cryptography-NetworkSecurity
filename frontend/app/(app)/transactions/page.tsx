@@ -5,6 +5,7 @@ import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { currentDateKey } from "@/lib/utils/date";
+import { formatMoneySigned } from "@/lib/utils/money";
 
 type Tx = {
   id: string;
@@ -25,6 +26,7 @@ export default function TransactionsPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -33,10 +35,29 @@ export default function TransactionsPage() {
       if (!res.ok) throw new Error("Failed to load transactions");
       const data = await res.json();
       setTransactions(data.transactions);
+      setNextCursor(data.nextCursor ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     }
   }, []);
+
+  const loadMore = useCallback(async () => {
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (nextCursor) params.set("before", nextCursor);
+      params.set("limit", "100");
+      const res = await fetch(`/api/transactions?${params}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error("Failed to load more transactions");
+      const data = await res.json();
+      setTransactions((prev) => [...(prev ?? []), ...(data.transactions ?? [])]);
+      setNextCursor(data.nextCursor ?? null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    }
+  }, [nextCursor]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch
@@ -157,12 +178,11 @@ export default function TransactionsPage() {
                   {t.category}
                 </span>
                 <span
-                  className={`figures w-20 text-right font-medium ${
+                  className={`figures w-24 text-right font-medium ${
                     t.amount < 0 ? "text-debit" : "text-credit"
                   }`}
                 >
-                  {t.amount < 0 ? "-" : "+"}
-                  ${Math.abs(t.amount).toFixed(2)}
+                  {formatMoneySigned(t.amount)}
                 </span>
                 <button
                   onClick={() => onDelete(t.id)}
@@ -175,6 +195,13 @@ export default function TransactionsPage() {
               </li>
             ))}
           </ul>
+          {nextCursor && (
+            <div className="border-t border-line px-4 py-3">
+              <button onClick={loadMore} className="btn btn-ghost w-full">
+                Load more
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

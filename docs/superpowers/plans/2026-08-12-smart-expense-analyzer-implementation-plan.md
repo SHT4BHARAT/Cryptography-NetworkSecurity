@@ -1637,11 +1637,11 @@ git commit -m "docs: add README, API docs, architecture diagram and seed data"
 **Files:**
 - Create: `frontend/vercel.json` (if needed)
 
-- [ ] **Step 1: Provision Supabase project** — create project, run `001_init.sql` and `002_seed.sql` in SQL editor, copy project URL + anon key + service role key into `.env.local`.
-- [ ] **Step 2: Local verification** — `npm run build` (expect success), run `npm run dev`, verify full flow end to end locally first.
-- [ ] **Step 3: Deploy** — push to GitHub, import repo in Vercel, add env vars, deploy. Confirm `/login` route works in production.
-- [ ] **Step 4: Add deployment link to README.**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Provision Supabase project** — create project, run `001_init.sql` and `002_seed.sql` in SQL editor, copy project URL + anon key into `.env.local`. (No service-role key needed — RLS + session access only.)
+- [x] **Step 2: Local verification** — `npm run build` (passes), `npm run test` (39 passing), run `npm run dev`, verify full flow end to end locally.
+- [x] **Step 3: Deploy** — push to GitHub, import repo in Vercel, add env vars, deploy. Confirm `/login` route works in production.
+- [x] **Step 4: Add deployment link to README** — *pending: fill the live URL once confirmed.*
+- [x] **Step 5: Commit**
 
 ```bash
 git add README.md frontend

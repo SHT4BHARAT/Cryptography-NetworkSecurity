@@ -1,10 +1,6 @@
 // frontend/app/(app)/dashboard/page.tsx
 import { createClient } from "@/lib/supabase/server";
-import {
-  getHealthService,
-  getAnalyzeService,
-  getSubscriptionsService,
-} from "@/lib/analysis/services";
+import { getDashboardService } from "@/lib/analysis/services";
 import { HealthGauge } from "@/components/HealthGauge";
 import { SpendingBreakdown } from "@/components/SpendingBreakdown";
 import { InsightsList } from "@/components/InsightsList";
@@ -19,11 +15,12 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [health, analyze, subs] = await Promise.all([
-    getHealthService(),
-    getAnalyzeService(),
-    getSubscriptionsService(),
-  ]);
+  // Single consolidated fetch (transactions, profile income, budgets) so the
+  // dashboard doesn't re-fetch the full transaction set three times.
+  const data = await getDashboardService();
+  const health = data?.health ?? null;
+  const analyze = data?.analyze;
+  const subscriptions = data?.subscriptions ?? [];
 
   const hasData = !!analyze?.breakdown?.length;
   const recommendations = health?.recommendations ?? [];
@@ -75,8 +72,8 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {!subs?.subscriptions?.length ? null : (
-        <SubscriptionList subscriptions={subs.subscriptions} />
+      {!subscriptions.length ? null : (
+        <SubscriptionList subscriptions={subscriptions} />
       )}
     </div>
   );

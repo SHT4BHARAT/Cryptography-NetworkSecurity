@@ -123,3 +123,119 @@ export async function getSubscriptionsService(): Promise<SubscriptionsData | nul
 
   return { subscriptions: subs };
 }
+
+export type DashboardData = {
+  health: HealthData | null;
+  analyze: AnalyzeData;
+  subscriptions: Subscription[];
+};
+
+export type RawTx = {
+  date: string;
+  amount: number;
+  category?: string | null;
+  description?: string | null;
+};
+
+type DashboardRows = {
+  profileRes: { data: { monthly_income?: number | null } | null };
+  trxRes: { data: RawTx[] | null };
+  budgetRes: { data: { amount: number; category: string }[] | null };
+};
+
+/**
+ * Single-fetch aggregation for the dashboard. Queries transactions once and
+ * derives the health score, spending insights/breakdown/trends and detected
+ * subscriptions in memory — avoiding the previous three overlapping fetches.
+ */
+export async function getDashboardService(): Promise<DashboardData | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const now = new Date();
+  const month = monthKeyOf(now);
+  const prevMonth = monthKeyOf(shiftMonth(now, -1));
+
+  const [profileRes, trxRes, budgetRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("monthly_income")
+      .eq("user_id", user.id)
+      .maybeSingle() as unknown as DashboardRows["profileRes"],
+    supabase
+      .from("transactions")
+      .select("date, amount, category, description")
+      .eq("user_id", user.id) as unknown as DashboardRows["trxRes"],
+    supabase
+      .from("budgets")
+      .select("amount, category")
+      .eq("user_id", user.id)
+      .eq("month", `${month}-01`) as unknown as DashboardRows["budgetRes"],
+  ]);
+
+  const rows = trxRes.data ?? [];
+  const tx = rows.map((t) => ({
+    date: t.date,
+    amount: Number(t.amount),
+    category: t.category ?? "Uncategorized",
+  }));
+
+  // --- Health score (current month) ---
+  const monthTx = rows.filter((t) => t.date.startsWith(month));
+  const income = profileRes.data?.monthly_income ?? 0;
+  const actualIncome = monthTx
+    .filter((t) => t.amount > 0)
+    .reduce((s, t) => s + Number(t.amount), 0);
+  const spending = Math.abs(
+    monthTx.filter((t) => t.amount < 0).reduce((s, t) => s + Number(t.amount), 0)
+  );
+  const budgeted = (budgetRes.data ?? []).reduce((s, b) => s + Number(b.amount), 0);
+  const spentOnBudgeted = (budgetRes.data ?? []).reduce(
+    (s, b) =>
+      s +
+      Math.abs(
+        monthTx
+          .filter((t) => t.category === b.category && t.amount < 0)
+          .reduce((x, t) => x + Number(t.amount), 0)
+      ),
+    0
+  );
+  const prevSpending = Math.abs(
+    rows
+      .filter((t) => t.amount < 0 && t.date.startsWith(prevMonth))
+      .reduce((s, t) => s + Number(t.amount), 0)
+  );
+
+  const result = computeScore({
+    income: Math.max(Number(income), actualIncome),
+    spending,
+    budgeted,
+    spentOnBudgeted,
+    prevMonthSpending: prevSpending || null,
+  });
+
+  const health: HealthData = { month, ...result };
+
+  // --- Insights / breakdown / trend ---
+  const analyze: AnalyzeData = {
+    insights: buildInsights(tx),
+    breakdown: buildCategoryBreakdown(tx),
+    series: buildMonthlySeries(tx),
+  };
+
+  // --- Subscriptions ---
+  const subscriptions = detectSubscriptions(
+    rows
+      .filter((r) => r.description)
+      .map((t) => ({
+        description: t.description ?? "",
+        amount: Number(t.amount),
+        date: t.date,
+      }))
+  );
+
+  return { health, analyze, subscriptions };
+}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { currentMonthKey } from "@/lib/utils/date";
+import { formatMoney } from "@/lib/utils/money";
 
 type Budget = { id: string; category: string; month: string; amount: number };
 type Goal = { id: string; name: string; target_amount: number; saved_amount: number; deadline: string | null };
@@ -127,7 +128,7 @@ export default function BudgetsPage() {
                     <div className="mb-1 flex items-center justify-between text-sm">
                       <span className="font-medium text-ink">{b.category}</span>
                       <span className={`figures ${over ? "font-medium text-debit" : "text-ledger"}`}>
-                        ${spent.toFixed(2)} / ${Number(b.amount).toFixed(2)}
+                        {formatMoney(spent)} / {formatMoney(Number(b.amount))}
                       </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-[3px] bg-line">
@@ -138,7 +139,7 @@ export default function BudgetsPage() {
                     </div>
                     {over && (
                       <p className="figures mt-1 text-xs text-debit">
-                        Overspent by ${(spent - Number(b.amount)).toFixed(2)}
+                        Overspent by {formatMoney(spent - Number(b.amount))}
                       </p>
                     )}
                   </li>
@@ -164,7 +165,8 @@ export default function BudgetsPage() {
                     <div className="mb-1 flex items-center justify-between text-sm">
                       <span className="font-medium text-ink">{g.name}</span>
                       <span className="figures text-ledger">
-                        ${Number(g.saved_amount).toFixed(2)} / ${Number(g.target_amount).toFixed(2)}
+                        {formatMoney(Number(g.saved_amount))} /{" "}
+                        {formatMoney(Number(g.target_amount))}
                       </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-[3px] bg-line">

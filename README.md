@@ -232,7 +232,7 @@ _(Add screenshots of the dashboard, transaction import, budgets and health pages
 3. **Configure Environment Variables in Vercel:**
    - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase Project URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Anon Key
-   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase Service Role Key
+   (No service-role key is needed — all access uses the session + Row-Level Security.)
    - `LLM_API_KEY` *(Optional)*: Key for AI categorization
    - `LLM_BASE_URL` *(Optional)*: Base URL (default: `https://api.openai.com/v1`)
    - `LLM_MODEL` *(Optional)*: Model name (default: `gpt-4o-mini`)

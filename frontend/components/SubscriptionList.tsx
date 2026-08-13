@@ -1,4 +1,5 @@
 "use client";
+import { formatMoney } from "@/lib/utils/money";
 type S = { merchant: string; amount: number; cadence: string; lastDetected: string };
 export function SubscriptionList({ subscriptions }: { subscriptions: S[] }) {
   if (!subscriptions.length) return null;
@@ -10,7 +11,7 @@ export function SubscriptionList({ subscriptions }: { subscriptions: S[] }) {
           <li key={i} className="flex justify-between py-2.5 text-sm">
             <span className="text-ink">{s.merchant}</span>
             <span className="figures font-medium text-ink">
-              ${Number(s.amount).toFixed(2)}/{s.cadence}
+              {formatMoney(s.amount)}/{s.cadence}
             </span>
           </li>
         ))}

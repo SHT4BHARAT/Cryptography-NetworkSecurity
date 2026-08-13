@@ -49,7 +49,13 @@ export function HealthGauge({
             {tier.label}
           </span>
         </div>
-        <div className={`figures text-6xl font-medium ${tier.text}`}>{score}</div>
+        <div
+          role="img"
+          aria-label={`Financial health score ${score} out of 100, rated ${tier.label}`}
+          className={`figures text-6xl font-medium ${tier.text}`}
+        >
+          {score}
+        </div>
       </div>
 
       <div className="mt-6 h-14">

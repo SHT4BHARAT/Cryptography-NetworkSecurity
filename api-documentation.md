@@ -33,13 +33,18 @@ Create a single transaction.
 
 ## GET /api/transactions
 
-List the user's transactions, newest first.
+List the user's transactions, newest first (keyset paginated).
 
 **Query params (all optional):**
 - `category` — filter by exact category
 - `month` — filter by `YYYY-MM`
+- `limit` — max rows to return (1–200, default 100)
+- `before` — exclusive ISO date cursor: return only rows dated before this
 
-**200** — `{ "transactions": [ { id, user_id, account_id, date, amount, description, category, created_at } ] }`
+**200** — `{ "transactions": [ ... ], "nextCursor": "2026-08-01" }`
+
+`nextCursor` is the last returned row's date; pass it as `before` to fetch the
+next page, or `null` when there are no more rows.
 
 ---
 
@@ -50,7 +55,11 @@ Upload a CSV of transactions (simulated bank statement).
 **Request:** `multipart/form-data` with field `file` (CSV). Expected columns in
 any order: date, description, amount (first 3 columns are used).
 
-**200** — `{ "imported": 42, "skippedDuplicates": 3, "errors": [ { "line": 12, "reason": "Invalid amount: \"nope\"" } ] }`
+**200** — `{ "imported": 42, "skippedDuplicates": 3, "truncated": false, "errors": [ { "line": 12, "reason": "Invalid amount: \"nope\"" } ] }`
+
+Limits: max 5 MiB per file (else `413`), max 10,000 rows (extra rows are
+dropped and `truncated` is `true`). Imports are rate-limited to 10/minute per
+user (else `429` with a `Retry-After` header).
 
 Rows are processed independently: valid rows import even when others fail.
 Dates accepted: ISO (`2024-03-01`), DMY (`01-03-2024`), slash (`01/03/2024`).
@@ -170,4 +179,10 @@ All errors follow `{ "error": "<message>" }`, with validation errors adding
 | ------ | --------------------------------------------- |
 | 400    | Invalid input / DB constraint violation       |
 | 401    | Missing or invalid session                    |
+| 413    | Uploaded file exceeds the size limit          |
+| 429    | Rate limit exceeded (`Retry-After` header)    |
 | 500    | Unexpected server error                       |
+
+Write endpoints (`/api/transactions`, `/api/transactions/import`,
+`/api/categorize`, `/api/budgets`, `/api/goals`, `/api/profile`) are rate
+limited per user (in-memory) to protect against abuse.
