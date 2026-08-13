@@ -1,5 +1,7 @@
 // frontend/app/(app)/layout.tsx
+"use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/SignOutButton";
 
 const NAV = [
@@ -7,26 +9,36 @@ const NAV = [
   { href: "/transactions", label: "Transactions" },
   { href: "/budgets", label: "Budgets" },
   { href: "/health", label: "Health" },
+  { href: "/profile", label: "Profile" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <nav className="border-b bg-white">
-        <div className="mx-auto flex max-w-5xl items-center gap-5 overflow-x-auto px-4 py-3">
-          <Link href="/dashboard" className="whitespace-nowrap font-semibold text-neutral-900">
+    <div className="min-h-screen bg-paper">
+      <nav className="border-b border-line bg-paper-raised">
+        <div className="mx-auto flex max-w-5xl items-center gap-6 overflow-x-auto px-4">
+          <Link href="/dashboard" className="whitespace-nowrap py-4 font-display italic text-lg text-ink">
             Expense Analyzer
           </Link>
           <div className="flex items-center gap-5">
-            {NAV.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className="whitespace-nowrap text-sm text-neutral-600 hover:text-neutral-900"
-              >
-                {n.label}
-              </Link>
-            ))}
+            {NAV.map((n) => {
+              const active = pathname?.startsWith(n.href);
+              return (
+                <Link
+                  key={n.href}
+                  href={n.href}
+                  className={`whitespace-nowrap border-b-2 py-4 text-xs uppercase tracking-wide ${
+                    active
+                      ? "border-brass text-ink"
+                      : "border-transparent text-ledger hover:text-ink"
+                  }`}
+                >
+                  {n.label}
+                </Link>
+              );
+            })}
           </div>
           <div className="ml-auto">
             <SignOutButton />

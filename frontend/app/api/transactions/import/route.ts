@@ -49,8 +49,10 @@ export async function POST(req: Request) {
 
   const skippedDuplicates = validRows.length - toInsert.length;
 
-  const { error } = await supabase.from("transactions").insert(toInsert);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (toInsert.length > 0) {
+    const { error } = await supabase.from("transactions").insert(toInsert);
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  }
 
   return NextResponse.json({ imported: toInsert.length, skippedDuplicates, errors });
 }

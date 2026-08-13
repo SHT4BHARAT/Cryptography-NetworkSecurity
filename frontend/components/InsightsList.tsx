@@ -1,4 +1,3 @@
-// frontend/components/InsightsList.tsx
 "use client";
 export function InsightsList({
   insights,
@@ -8,20 +7,15 @@ export function InsightsList({
   const trends = insights.filter((i) => i.kind === "mom-trend");
   if (!trends.length) return null;
   return (
-    <section className="rounded-lg border bg-white p-6">
-      <h2 className="mb-4 text-lg font-semibold text-neutral-900">Spending insights</h2>
-      <ul className="space-y-2">
+    <section className="panel">
+      <h2 className="mb-4 font-display text-lg text-ink">Spending insights</h2>
+      <ul className="divide-y divide-line">
         {trends.map((i, idx) => {
           const up = (i.changePercent ?? 0) >= 0;
           return (
-            <li
-              key={idx}
-              className="flex items-center justify-between gap-3 rounded border p-3 text-sm"
-            >
-              <span className="text-neutral-700">{i.category}</span>
-              <span
-                className={`font-medium ${up ? "text-red-600" : "text-green-600"}`}
-              >
+            <li key={idx} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+              <span className="text-ink">{i.category}</span>
+              <span className={`figures font-medium ${up ? "text-debit" : "text-credit"}`}>
                 {up ? "▲" : "▼"} {Math.abs(i.changePercent ?? 0)}% vs last month
               </span>
             </li>

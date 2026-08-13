@@ -30,6 +30,10 @@ export default function ImportPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Import failed");
       setResult(data as ImportResult);
+
+      if ((data as ImportResult).imported > 0) {
+        await fetch("/api/categorize", { method: "POST" }).catch(() => {});
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {

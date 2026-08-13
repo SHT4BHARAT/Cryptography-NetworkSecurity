@@ -88,27 +88,24 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-neutral-900">Transactions</h1>
-        <Link
-          href="/transactions/import"
-          className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
+        <h1 className="font-display text-xl text-ink">Transactions</h1>
+        <Link href="/transactions/import" className="btn btn-primary">
           Import CSV
         </Link>
       </div>
 
-      <form onSubmit={onSubmit} className="grid gap-3 rounded-lg border bg-white p-6 sm:grid-cols-4">
-        <label className="block text-sm font-medium text-neutral-700">
+      <form onSubmit={onSubmit} className="panel grid gap-3 sm:grid-cols-4">
+        <label className="block text-sm font-medium text-ink">
           Date
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+            className="field"
           />
         </label>
-        <label className="block text-sm font-medium text-neutral-700">
+        <label className="block text-sm font-medium text-ink">
           Amount
           <input
             type="number"
@@ -117,17 +114,17 @@ export default function TransactionsPage() {
             onChange={(e) => setAmount(e.target.value)}
             required
             placeholder="e.g. -12.99 or 3000"
-            className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+            className="field"
           />
         </label>
-        <label className="block text-sm font-medium text-neutral-700 sm:col-span-2">
+        <label className="block text-sm font-medium text-ink sm:col-span-2">
           Description
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
             placeholder="e.g. NETFLIX.COM"
-            className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+            className="field"
           />
         </label>
         {formError && (
@@ -135,10 +132,7 @@ export default function TransactionsPage() {
             <ErrorMessage message={formError} />
           </div>
         )}
-        <button
-          disabled={saving}
-          className="rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-60 sm:col-span-4"
-        >
+        <button disabled={saving} className="btn btn-primary sm:col-span-4">
           {saving ? "Saving…" : "Add transaction"}
         </button>
       </form>
@@ -146,25 +140,25 @@ export default function TransactionsPage() {
       {error && <ErrorMessage message={error} />}
 
       {!transactions ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
+        <p className="text-sm text-ledger">Loading…</p>
       ) : transactions.length === 0 ? (
         <EmptyState
           title="No transactions yet"
           hint="Add one above, or import a CSV statement."
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border bg-white">
-          <ul className="divide-y divide-neutral-100">
+        <div className="panel overflow-hidden p-0">
+          <ul className="divide-y divide-line">
             {transactions.map((t) => (
               <li key={t.id} className="flex items-center gap-3 px-4 py-3 text-sm">
-                <span className="w-24 shrink-0 text-neutral-500">{t.date}</span>
-                <span className="flex-1 truncate text-neutral-800">{t.description}</span>
-                <span className="hidden rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 sm:inline">
+                <span className="figures w-24 shrink-0 text-ledger">{t.date}</span>
+                <span className="flex-1 truncate text-ink">{t.description}</span>
+                <span className="hidden rounded-[3px] bg-line px-2 py-0.5 text-xs text-ledger sm:inline">
                   {t.category}
                 </span>
                 <span
-                  className={`w-20 text-right font-medium ${
-                    t.amount < 0 ? "text-neutral-900" : "text-green-600"
+                  className={`figures w-20 text-right font-medium ${
+                    t.amount < 0 ? "text-debit" : "text-credit"
                   }`}
                 >
                   {t.amount < 0 ? "-" : "+"}
@@ -174,7 +168,7 @@ export default function TransactionsPage() {
                   onClick={() => onDelete(t.id)}
                   disabled={deletingId === t.id}
                   aria-label={`Delete ${t.description}`}
-                  className="shrink-0 rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  className="shrink-0 rounded-[3px] px-2 py-1 text-xs text-debit hover:bg-debit/10 disabled:opacity-50"
                 >
                   {deletingId === t.id ? "Deleting…" : "Delete"}
                 </button>

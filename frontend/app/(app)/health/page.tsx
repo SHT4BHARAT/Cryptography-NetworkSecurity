@@ -55,10 +55,10 @@ export default function HealthPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-xl font-semibold text-neutral-900">Financial health</h1>
+      <h1 className="font-display text-xl text-ink">Financial health</h1>
 
       {loading ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
+        <p className="text-sm text-ledger">Loading…</p>
       ) : !health ? (
         <EmptyState
           title="Health score unavailable"
@@ -75,11 +75,11 @@ export default function HealthPage() {
           />
 
           {health.recommendations.length > 0 && (
-            <section className="rounded-lg border bg-white p-6">
-              <h2 className="mb-4 text-lg font-semibold text-neutral-900">Recommendations</h2>
-              <ul className="space-y-2">
+            <section className="panel">
+              <h2 className="mb-3 font-display text-lg text-ink">Recommendations</h2>
+              <ul className="divide-y divide-line">
                 {health.recommendations.map((r, i) => (
-                  <li key={i} className="rounded border p-3 text-sm text-neutral-700">
+                  <li key={i} className="py-2.5 text-sm text-ink">
                     {r}
                   </li>
                 ))}

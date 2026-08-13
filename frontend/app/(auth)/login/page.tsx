@@ -27,45 +27,42 @@ export default function LoginPage() {
   return (
     <main className="mx-auto mt-16 w-full max-w-sm space-y-6 px-4">
       <div>
-        <h1 className="text-2xl font-semibold text-neutral-900">Log in</h1>
-        <p className="mt-1 text-sm text-neutral-500">Welcome back to your financial dashboard.</p>
+        <h1 className="font-display text-2xl text-ink">Log in</h1>
+        <p className="mt-1 text-sm text-ledger">Welcome back to your financial dashboard.</p>
       </div>
       <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block text-sm font-medium text-neutral-700">
+        <label className="block text-sm font-medium text-ink">
           Email
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+            className="field"
           />
         </label>
-        <label className="block text-sm font-medium text-neutral-700">
+        <label className="block text-sm font-medium text-ink">
           Password
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+            className="field"
           />
         </label>
         {error && (
-          <p role="alert" className="rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+          <p role="alert" className="rounded-[3px] border border-debit/30 bg-debit/10 p-2 text-sm text-debit">
             {error}
           </p>
         )}
-        <button
-          disabled={busy}
-          className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white disabled:opacity-60"
-        >
+        <button disabled={busy} className="btn btn-primary w-full">
           {busy ? "Logging in…" : "Log in"}
         </button>
       </form>
-      <p className="text-sm text-neutral-600">
+      <p className="text-sm text-ledger">
         No account?{" "}
-        <Link href="/signup" className="underline">
+        <Link href="/signup" className="text-brass underline">
           Sign up
         </Link>
       </p>

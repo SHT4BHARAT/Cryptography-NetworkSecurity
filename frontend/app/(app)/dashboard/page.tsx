@@ -1,28 +1,16 @@
 // frontend/app/(app)/dashboard/page.tsx
-import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getHealthService,
+  getAnalyzeService,
+  getSubscriptionsService,
+} from "@/lib/analysis/services";
 import { HealthGauge } from "@/components/HealthGauge";
 import { SpendingBreakdown } from "@/components/SpendingBreakdown";
 import { InsightsList } from "@/components/InsightsList";
 import { SubscriptionList } from "@/components/SubscriptionList";
 import { TrendChart } from "@/components/TrendChart";
 import { EmptyState } from "@/components/EmptyState";
-
-async function getApi<T>(path: string, cookieHeader: string): Promise<T | null> {
-  try {
-    const h = await headers();
-    const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-    const proto = h.get("x-forwarded-proto") ?? "http";
-    const res = await fetch(`${proto}://${host}${path}`, {
-      headers: { cookie: cookieHeader },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  }
-}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -31,25 +19,10 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const cookieHeader = (await cookies()).toString();
-
   const [health, analyze, subs] = await Promise.all([
-    getApi<{
-      month: string;
-      score: number;
-      savingsRate: number | null;
-      spendingVsIncome: number | null;
-      budgetAdherence: number | null;
-      recommendations: string[];
-    }>("/api/health", cookieHeader),
-    getApi<{
-      insights: { kind: string; category: string; changePercent: number; share: number }[];
-      breakdown: { category: string; amount: number; share: number }[];
-      series: { month: string; spending: number; income: number }[];
-    }>("/api/analyze", cookieHeader),
-    getApi<{
-      subscriptions: { merchant: string; amount: number; cadence: string; lastDetected: string }[];
-    }>("/api/subscriptions", cookieHeader),
+    getHealthService(),
+    getAnalyzeService(),
+    getSubscriptionsService(),
   ]);
 
   const hasData = !!analyze?.breakdown?.length;
@@ -73,11 +46,11 @@ export default async function DashboardPage() {
       )}
 
       {recommendations.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-lg font-semibold text-neutral-900">Recommendations</h2>
-          <ul className="space-y-2">
+        <section className="panel">
+          <h2 className="mb-3 font-display text-lg text-ink">Recommendations</h2>
+          <ul className="divide-y divide-line">
             {recommendations.map((r, i) => (
-              <li key={i} className="rounded border bg-white p-3 text-sm text-neutral-700">
+              <li key={i} className="py-2.5 text-sm text-ink">
                 {r}
               </li>
             ))}

@@ -95,20 +95,20 @@ export default function BudgetsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-xl font-semibold text-neutral-900">Budgets & Goals</h1>
+      <h1 className="font-display text-xl text-ink">Budgets &amp; Goals</h1>
 
       {error && <ErrorMessage message={error} />}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-neutral-900">Budget progress</h2>
-          <label className="mb-3 block text-sm font-medium text-neutral-700">
+        <section className="panel">
+          <h2 className="mb-4 font-display text-lg text-ink">Budget progress</h2>
+          <label className="mb-3 block text-sm font-medium text-ink">
             Month
             <input
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+              className="field"
             />
           </label>
           {visibleBudgets.length === 0 ? (
@@ -125,19 +125,19 @@ export default function BudgetsPage() {
                 return (
                   <li key={b.id}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="font-medium text-neutral-700">{b.category}</span>
-                      <span className={over ? "font-medium text-red-600" : "text-neutral-500"}>
+                      <span className="font-medium text-ink">{b.category}</span>
+                      <span className={`figures ${over ? "font-medium text-debit" : "text-ledger"}`}>
                         ${spent.toFixed(2)} / ${Number(b.amount).toFixed(2)}
                       </span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded bg-neutral-100">
+                    <div className="h-2 overflow-hidden rounded-[3px] bg-line">
                       <div
-                        className={`h-full rounded ${over ? "bg-red-500" : "bg-blue-600"}`}
+                        className={`h-full rounded-[3px] ${over ? "bg-debit" : "bg-brass"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                     {over && (
-                      <p className="mt-1 text-xs text-red-600">
+                      <p className="figures mt-1 text-xs text-debit">
                         Overspent by ${(spent - Number(b.amount)).toFixed(2)}
                       </p>
                     )}
@@ -148,8 +148,8 @@ export default function BudgetsPage() {
           )}
         </section>
 
-        <section className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-neutral-900">Savings goals</h2>
+        <section className="panel">
+          <h2 className="mb-4 font-display text-lg text-ink">Savings goals</h2>
           {!goals || goals.length === 0 ? (
             <EmptyState title="No savings goals" hint="Create a goal to track progress over time." />
           ) : (
@@ -162,13 +162,13 @@ export default function BudgetsPage() {
                 return (
                   <li key={g.id}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="font-medium text-neutral-700">{g.name}</span>
-                      <span className="text-neutral-500">
+                      <span className="font-medium text-ink">{g.name}</span>
+                      <span className="figures text-ledger">
                         ${Number(g.saved_amount).toFixed(2)} / ${Number(g.target_amount).toFixed(2)}
                       </span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded bg-neutral-100">
-                      <div className="h-full rounded bg-emerald-600" style={{ width: `${pct}%` }} />
+                    <div className="h-2 overflow-hidden rounded-[3px] bg-line">
+                      <div className="h-full rounded-[3px] bg-credit" style={{ width: `${pct}%` }} />
                     </div>
                   </li>
                 );
@@ -179,30 +179,30 @@ export default function BudgetsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-neutral-900">Set a budget</h2>
+        <section className="panel">
+          <h2 className="mb-4 font-display text-lg text-ink">Set a budget</h2>
           <form onSubmit={addBudget} className="grid gap-3 sm:grid-cols-3">
-            <label className="block text-sm font-medium text-neutral-700">
+            <label className="block text-sm font-medium text-ink">
               Category
               <input
                 value={cat}
                 onChange={(e) => setCat(e.target.value)}
                 required
                 placeholder="Food & Dining"
-                className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+                className="field"
               />
             </label>
-            <label className="block text-sm font-medium text-neutral-700">
+            <label className="block text-sm font-medium text-ink">
               Month
               <input
                 type="month"
                 value={bMonth}
                 onChange={(e) => setBMonth(e.target.value)}
                 required
-                className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+                className="field"
               />
             </label>
-            <label className="block text-sm font-medium text-neutral-700">
+            <label className="block text-sm font-medium text-ink">
               Amount
               <input
                 type="number"
@@ -211,29 +211,27 @@ export default function BudgetsPage() {
                 value={bAmount}
                 onChange={(e) => setBAmount(e.target.value)}
                 required
-                className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+                className="field"
               />
             </label>
-            <button className="rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white sm:col-span-3">
-              Save budget
-            </button>
+            <button className="btn btn-primary sm:col-span-3">Save budget</button>
           </form>
         </section>
 
-        <section className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-neutral-900">Start a goal</h2>
+        <section className="panel">
+          <h2 className="mb-4 font-display text-lg text-ink">Start a goal</h2>
           <form onSubmit={addGoal} className="grid gap-3 sm:grid-cols-3">
-            <label className="block text-sm font-medium text-neutral-700">
+            <label className="block text-sm font-medium text-ink">
               Name
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
                 placeholder="Emergency fund"
-                className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+                className="field"
               />
             </label>
-            <label className="block text-sm font-medium text-neutral-700">
+            <label className="block text-sm font-medium text-ink">
               Target amount
               <input
                 type="number"
@@ -242,21 +240,19 @@ export default function BudgetsPage() {
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
                 required
-                className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+                className="field"
               />
             </label>
-            <label className="block text-sm font-medium text-neutral-700">
+            <label className="block text-sm font-medium text-ink">
               Deadline (optional)
               <input
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-neutral-300 p-2"
+                className="field"
               />
             </label>
-            <button className="rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white sm:col-span-3">
-              Create goal
-            </button>
+            <button className="btn btn-primary sm:col-span-3">Create goal</button>
           </form>
         </section>
       </div>

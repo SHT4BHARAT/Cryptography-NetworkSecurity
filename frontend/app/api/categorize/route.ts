@@ -29,28 +29,22 @@ export async function POST() {
   );
 
   const ids = new Set(trx.map((t) => t.id));
-  const updates = [...map.entries()]
-    .filter(([id, cat]) => cat !== "Uncategorized" && ids.has(id))
-    .map(([id, category]) => {
-      const t = trx.find((row) => row.id === id)!;
-      return {
-        id,
-        user_id: t.user_id,
-        date: t.date,
-        amount: t.amount,
-        description: t.description,
-        dedupe_hash: t.dedupe_hash,
-        created_at: t.created_at,
-        category,
-      };
-    });
+  const updates = [...map.entries()].filter(
+    ([id, cat]) => cat !== "Uncategorized" && ids.has(id)
+  );
 
   if (updates.length) {
-    const { error: upsertError } = await supabase
-      .from("transactions")
-      .upsert(updates, { onConflict: "id" });
-    if (upsertError)
-      return NextResponse.json({ error: upsertError.message }, { status: 400 });
+    const updatePromises = updates.map(([id, category]) =>
+      supabase
+        .from("transactions")
+        .update({ category })
+        .eq("id", id)
+        .eq("user_id", user.id)
+    );
+    const results = await Promise.all(updatePromises);
+    const firstErr = results.find((r) => r.error);
+    if (firstErr?.error)
+      return NextResponse.json({ error: firstErr.error.message }, { status: 400 });
   }
   return NextResponse.json({ updated: updates.length });
 }

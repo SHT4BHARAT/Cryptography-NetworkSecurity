@@ -1,9 +1,8 @@
-// frontend/components/ErrorMessage.tsx
 export function ErrorMessage({ message }: { message: string }) {
   return (
     <div
       role="alert"
-      className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+      className="rounded-[3px] border border-debit/30 bg-debit/10 p-3 text-sm text-debit"
     >
       {message}
     </div>

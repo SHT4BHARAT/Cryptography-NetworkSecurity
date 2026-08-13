@@ -1,4 +1,3 @@
-// frontend/components/SignOutButton.tsx
 "use client";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -14,10 +13,7 @@ export function SignOutButton() {
   };
 
   return (
-    <button
-      onClick={onSignOut}
-      className="text-sm text-neutral-600 hover:text-neutral-900"
-    >
+    <button onClick={onSignOut} className="text-xs uppercase tracking-wide text-ledger hover:text-ink">
       Sign out
     </button>
   );

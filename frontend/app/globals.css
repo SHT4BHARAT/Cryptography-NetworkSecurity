@@ -1,19 +1,116 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafafa;
-  --foreground: #171717;
+  --paper: #eef1e6;
+  --paper-raised: #f6f8f0;
+  --ink: #1b2a22;
+  --ledger: #5b6b5a;
+  --brass: #a9793c;
+  --credit: #2f7a4f;
+  --debit: #b4432e;
+  --line: #d8dfc9;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-ink: var(--ink);
+  --color-ledger: var(--ledger);
+  --color-brass: var(--brass);
+  --color-credit: var(--credit);
+  --color-debit: var(--debit);
+  --color-line: var(--line);
+  --font-display: var(--font-newsreader);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer components {
+  .panel {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1.5rem;
+  }
+
+  .figures {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .field {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    background: #fff;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--ink);
+  }
+  .field:focus {
+    outline: 2px solid var(--brass);
+    outline-offset: 1px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+  }
+  .btn:disabled {
+    opacity: 0.6;
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--ledger);
+  }
+  .btn-brass {
+    background: var(--brass);
+    color: var(--paper);
+  }
+  .btn-brass:hover:not(:disabled) {
+    opacity: 0.88;
+  }
+  .btn-ghost {
+    border: 1px solid var(--line);
+    color: var(--ink);
+    background: transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--line);
+  }
+
+  .pulse-draw {
+    stroke-dasharray: 1px;
+    stroke-dashoffset: 1px;
+    animation: pulse-draw 1.6s ease-out forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-draw {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+  }
+}
+
+@keyframes pulse-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }

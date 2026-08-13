@@ -16,7 +16,7 @@ export async function GET() {
   const prevMonth = monthKeyOf(shiftMonth(now, -1));
 
   const [profileRes, trxRes, budgetRes] = await Promise.all([
-    supabase.from("profiles").select("monthly_income").eq("user_id", user.id).single(),
+    supabase.from("profiles").select("monthly_income").eq("user_id", user.id).maybeSingle(),
     supabase
       .from("transactions")
       .select("amount, date, category")

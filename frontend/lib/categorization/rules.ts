@@ -24,12 +24,17 @@ const OUTPUT_CATEGORY: Record<string, Category> = {
   Groceries: "Groceries",
   Rent: "Rent",
   Shopping: "Shopping",
+  Subscriptions: "Subscriptions",
   Subscription: "Subscriptions",
   Travel: "Travel",
+  "Bills & Utilities": "Bills & Utilities",
   Bills: "Bills & Utilities",
+  Utilities: "Bills & Utilities",
   Entertainment: "Entertainment",
   Transport: "Transport",
   Health: "Health",
+  Income: "Income",
+  Transfers: "Transfers",
 };
 
 const RULES: Rule[] = [
